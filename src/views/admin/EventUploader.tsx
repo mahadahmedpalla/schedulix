@@ -57,7 +57,8 @@ export const EventUploader = () => {
             title: formData.title,
             description: formData.description,
             date: formData.date,
-            file_url: fileUrl
+            file_url: fileUrl,
+            is_global: true
         }]);
 
         setLoading(false);

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Routes, Route, Link, useLocation } from "react-router-dom";
 import { supabase } from "../services/supabase.ts";
+import { useAuth } from "../context/AuthContext.tsx";
 import { Layout } from "../components/Layout.tsx";
 import { BookOpen, Settings, PlusCircle, LogOut } from "lucide-react";
 import { SubjectManager } from "./admin/SubjectManager.tsx";
@@ -14,29 +15,25 @@ const tabs = [
 ];
 
 export const AdminDashboard = () => {
-    const [session, setSession] = useState<any>(null);
+    const { user, role, loading } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
 
     useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session);
-            if (!session) navigate("/login");
-        });
+        if (!loading) {
+            if (!user) {
+                navigate("/login");
+            } else if (role !== "admin") {
+                navigate("/");
+            }
+        }
+    }, [user, role, loading, navigate]);
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setSession(session);
-            if (!session) navigate("/login");
-        });
-
-        return () => subscription.unsubscribe();
-    }, [navigate]);
-
-    if (!session) return null;
+    if (loading || !user || role !== "admin") return null;
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
-        navigate("/login");
+        navigate("/");
     };
 
     const isActive = (path: string) =>
