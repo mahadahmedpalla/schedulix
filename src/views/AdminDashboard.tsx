@@ -22,9 +22,10 @@ export const AdminDashboard = () => {
     useEffect(() => {
         if (!loading) {
             if (!user) {
-                navigate("/login");
+                navigate("/sec/admin/login");
             } else if (role !== "admin") {
-                navigate("/");
+                // User is logged in but not an admin. Sign them out and send back to admin login.
+                supabase.auth.signOut().then(() => navigate("/sec/admin/login"));
             }
         }
     }, [user, role, loading, navigate]);
