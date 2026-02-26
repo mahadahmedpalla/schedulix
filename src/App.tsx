@@ -3,6 +3,7 @@ import { CalendarView } from "./views/CalendarView.tsx";
 import { AdminDashboard } from "./views/AdminDashboard.tsx";
 import { Login } from "./views/Login.tsx";
 import { Signup } from "./views/Signup.tsx";
+import { AdminAuth } from "./views/AdminAuth.tsx";
 import { AuthProvider } from "./context/AuthContext.tsx";
 
 export default function App() {
@@ -13,6 +14,8 @@ export default function App() {
           <Route path="/" element={<CalendarView />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/sec/admin/login" element={<AdminAuth mode="login" />} />
+          <Route path="/sec/admin/signup" element={<AdminAuth mode="signup" />} />
           <Route path="/admin/*" element={<AdminDashboard />} />
         </Routes>
       </Router>
