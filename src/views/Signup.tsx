@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { supabase } from "../services/supabase.ts";
 import { useNavigate, Link } from "react-router-dom";
-import { LogIn, Lock, Mail, CalendarDays, ArrowLeft, UserPlus } from "lucide-react";
+import { Lock, Mail, CalendarDays, ArrowLeft, UserPlus } from "lucide-react";
 
 export const Signup = () => {
     const [email, setEmail] = useState("");
