@@ -38,24 +38,28 @@ export const AdminAuth = ({ mode }: { mode: "login" | "signup" }) => {
 
                 if (rpcError) {
                     setError("Account created, but failed to assign admin role: " + rpcError.message);
+                    setLoading(false);
                 } else if (!isSuccess) {
                     setError("Account created, but Invalid Admin Key provided.");
+                    setLoading(false);
                 } else {
                     setSuccess(true);
+                    setLoading(false);
                 }
+            } else {
+                setLoading(false);
             }
         } else {
             // Login mode
             const { error } = await supabase.auth.signInWithPassword({ email, password });
             if (error) {
                 setError(error.message);
+                setLoading(false);
             } else {
-                // Redirect to admin dashboard immediately
-                navigate("/admin");
+                // Redirect to admin dashboard immediately via hard reload to clear React state correctly
+                window.location.href = "/admin";
             }
         }
-
-        setLoading(false);
     };
 
     return (
