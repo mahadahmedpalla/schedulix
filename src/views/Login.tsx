@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { supabase } from "../services/supabase.ts";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { LogIn, Lock, Mail, CalendarDays, ArrowLeft } from "lucide-react";
 
 export const Login = () => {
@@ -216,6 +216,10 @@ export const Login = () => {
                             </>
                         )}
                     </button>
+
+                    <p style={{ textAlign: "center", fontSize: "0.8125rem", color: "var(--fg-muted)", marginTop: "0.5rem" }}>
+                        Don't have an account? <Link to="/signup" style={{ color: "var(--primary)", fontWeight: 500 }}>Sign up</Link>
+                    </p>
                 </form>
             </div>
         </div>

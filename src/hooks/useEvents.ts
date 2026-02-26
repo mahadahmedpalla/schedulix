@@ -29,26 +29,26 @@ export const useEvents = (startDate: string, endDate: string) => {
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const fetchEvents = async () => {
+        setLoading(true);
+
+        const [eventsRes, subjectsRes] = await Promise.all([
+            supabase
+                .from('events')
+                .select('*, subjects(*), event_types(*)')
+                .gte('date', startDate)
+                .lte('date', endDate),
+            supabase.from('subjects').select('*')
+        ]);
+
+        if (eventsRes.data) setEvents(eventsRes.data);
+        if (subjectsRes.data) setSubjects(subjectsRes.data);
+        setLoading(false);
+    };
+
     useEffect(() => {
-        const fetchEvents = async () => {
-            setLoading(true);
-
-            const [eventsRes, subjectsRes] = await Promise.all([
-                supabase
-                    .from('events')
-                    .select('*, subjects(*), event_types(*)')
-                    .gte('date', startDate)
-                    .lte('date', endDate),
-                supabase.from('subjects').select('*')
-            ]);
-
-            if (eventsRes.data) setEvents(eventsRes.data);
-            if (subjectsRes.data) setSubjects(subjectsRes.data);
-            setLoading(false);
-        };
-
         fetchEvents();
     }, [startDate, endDate]);
 
-    return { events, subjects, loading };
+    return { events, subjects, loading, refetchEvents: fetchEvents };
 };

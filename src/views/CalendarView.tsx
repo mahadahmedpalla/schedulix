@@ -2,13 +2,19 @@ import { useState, useMemo } from "react";
 import { Layout } from "../components/Layout.tsx";
 import { Calendar } from "../components/Calendar.tsx";
 import { EventDetailPanel } from "../components/EventDetailPanel.tsx";
-import { useEvents } from "../hooks/useEvents.ts";
 import { FilterBar } from "../components/FilterBar.tsx";
+import { useEvents } from "../hooks/useEvents.ts";
+import { useAuth } from "../context/AuthContext.tsx";
+import { AddPersonalEventModal } from "../components/AddPersonalEventModal.tsx";
+import { Plus } from "lucide-react";
 
 export const CalendarView = () => {
+    const { user } = useAuth();
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
-    const { events, subjects, loading } = useEvents("2024-01-01", "2027-12-31");
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+    const { events, subjects, loading, refetchEvents } = useEvents("2024-01-01", "2027-12-31");
 
     const filteredEvents = useMemo(() => {
         if (selectedSubjects.length === 0) return events;
@@ -48,14 +54,27 @@ export const CalendarView = () => {
                     Click any date to see scheduled events.
                 </p>
 
-                {/* Filter bar */}
-                {subjects.length > 0 && (
-                    <FilterBar
-                        subjects={subjects}
-                        selectedSubjects={selectedSubjects}
-                        onChange={setSelectedSubjects}
-                    />
-                )}
+                {/* Filter bar & Actions row */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
+                    {subjects.length > 0 && (
+                        <FilterBar
+                            subjects={subjects}
+                            selectedSubjects={selectedSubjects}
+                            onChange={setSelectedSubjects}
+                        />
+                    )}
+
+                    {user && (
+                        <button
+                            onClick={() => setIsAddModalOpen(true)}
+                            className="btn btn-outline"
+                            style={{ padding: "0.4rem 0.75rem", fontSize: "0.8125rem" }}
+                        >
+                            <Plus size={14} />
+                            Personal Event
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* ── Calendar card ── */}
@@ -87,6 +106,18 @@ export const CalendarView = () => {
                 events={selectedDateEvents}
                 onClose={() => setSelectedDate(null)}
             />
+
+            {/* ── Add Event Modal ── */}
+            {isAddModalOpen && (
+                <AddPersonalEventModal
+                    subjects={subjects}
+                    onClose={() => setIsAddModalOpen(false)}
+                    onSuccess={() => {
+                        setIsAddModalOpen(false);
+                        refetchEvents();
+                    }}
+                />
+            )}
         </Layout>
     );
 };
