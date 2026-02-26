@@ -9,7 +9,6 @@ export const AdminAuth = ({ mode }: { mode: "login" | "signup" }) => {
     const [adminKey, setAdminKey] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [success, setSuccess] = useState(false);
 
     const handleAuth = async (e: FormEvent) => {
         e.preventDefault();
@@ -138,82 +137,57 @@ export const AdminAuth = ({ mode }: { mode: "login" | "signup" }) => {
                     </div>
                 )}
 
-                {success ? (
-                    <div
-                        style={{
-                            background: "#18181b",
-                            color: "#ffffff",
-                            borderRadius: "var(--radius-sm)",
-                            padding: "1rem",
-                            fontSize: "0.875rem",
-                            marginBottom: "1.5rem",
-                            fontWeight: 500,
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: "0.5rem"
-                        }}
-                    >
-                        <span>Admin privileges granted successfully.</span>
-                        <span style={{ fontSize: "0.8125rem", color: "#a1a1aa" }}>
-                            Your account is now initialized. You may log in to access the dashboard.
-                        </span>
-                        <Link to="/sec/admin/login" style={{ color: "#ffffff", fontWeight: 600, marginTop: "0.5rem" }}>
-                            Proceed to login →
-                        </Link>
+                <form onSubmit={handleAuth} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+                    <div>
+                        <label style={{ display: "block", fontSize: "0.8125rem", fontWeight: 500, color: "var(--fg)", marginBottom: "0.4rem" }}>
+                            Admin Email
+                        </label>
+                        <div style={{ position: "relative" }}>
+                            <Mail size={16} strokeWidth={1.5} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "var(--fg-subtle)", pointerEvents: "none" }} />
+                            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required style={{ width: "100%", padding: "0.5rem 0.75rem 0.5rem 2.25rem" }} />
+                        </div>
                     </div>
-                ) : (
-                    <form onSubmit={handleAuth} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+
+                    <div>
+                        <label style={{ display: "block", fontSize: "0.8125rem", fontWeight: 500, color: "var(--fg)", marginBottom: "0.4rem" }}>
+                            Password
+                        </label>
+                        <div style={{ position: "relative" }}>
+                            <Lock size={16} strokeWidth={1.5} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "var(--fg-subtle)", pointerEvents: "none" }} />
+                            <input type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} style={{ width: "100%", padding: "0.5rem 0.75rem 0.5rem 2.25rem" }} />
+                        </div>
+                    </div>
+
+                    {mode === "signup" && (
                         <div>
-                            <label style={{ display: "block", fontSize: "0.8125rem", fontWeight: 500, color: "var(--fg)", marginBottom: "0.4rem" }}>
-                                Admin Email
+                            <label style={{ display: "block", fontSize: "0.8125rem", fontWeight: 600, color: "var(--fg)", marginBottom: "0.4rem" }}>
+                                Registration Key
                             </label>
                             <div style={{ position: "relative" }}>
-                                <Mail size={16} strokeWidth={1.5} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "var(--fg-subtle)", pointerEvents: "none" }} />
-                                <input type="email" value={email} onChange={e => setEmail(e.target.value)} required style={{ width: "100%", padding: "0.5rem 0.75rem 0.5rem 2.25rem" }} />
+                                <KeyRound size={16} strokeWidth={1.5} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "var(--fg-subtle)", pointerEvents: "none" }} />
+                                <input type="password" value={adminKey} onChange={e => setAdminKey(e.target.value)} required style={{ width: "100%", padding: "0.5rem 0.75rem 0.5rem 2.25rem", borderColor: "var(--fg)" }} placeholder="Enter the secret key..." />
                             </div>
                         </div>
+                    )}
 
-                        <div>
-                            <label style={{ display: "block", fontSize: "0.8125rem", fontWeight: 500, color: "var(--fg)", marginBottom: "0.4rem" }}>
-                                Password
-                            </label>
-                            <div style={{ position: "relative" }}>
-                                <Lock size={16} strokeWidth={1.5} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "var(--fg-subtle)", pointerEvents: "none" }} />
-                                <input type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} style={{ width: "100%", padding: "0.5rem 0.75rem 0.5rem 2.25rem" }} />
-                            </div>
-                        </div>
-
-                        {mode === "signup" && (
-                            <div>
-                                <label style={{ display: "block", fontSize: "0.8125rem", fontWeight: 600, color: "var(--fg)", marginBottom: "0.4rem" }}>
-                                    Registration Key
-                                </label>
-                                <div style={{ position: "relative" }}>
-                                    <KeyRound size={16} strokeWidth={1.5} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "var(--fg-subtle)", pointerEvents: "none" }} />
-                                    <input type="password" value={adminKey} onChange={e => setAdminKey(e.target.value)} required style={{ width: "100%", padding: "0.5rem 0.75rem 0.5rem 2.25rem", borderColor: "var(--fg)" }} placeholder="Enter the secret key..." />
-                                </div>
-                            </div>
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="btn btn-primary"
+                        style={{ width: "100%", marginTop: "0.5rem", height: "40px", background: "var(--fg)", color: "var(--bg)" }}
+                    >
+                        {loading ? <div className="spinner" style={{ width: "16px", height: "16px", borderWidth: "2px", borderColor: "var(--bg)", borderRightColor: "transparent" }} /> : (
+                            <>{mode === "login" ? "Authenticate" : "Initialize Account"}</>
                         )}
-
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="btn btn-primary"
-                            style={{ width: "100%", marginTop: "0.5rem", height: "40px", background: "var(--fg)", color: "var(--bg)" }}
-                        >
-                            {loading ? <div className="spinner" style={{ width: "16px", height: "16px", borderWidth: "2px", borderColor: "var(--bg)", borderRightColor: "transparent" }} /> : (
-                                <>{mode === "login" ? "Authenticate" : "Initialize Account"}</>
-                            )}
-                        </button>
-                        <p style={{ textAlign: "center", fontSize: "0.8125rem", color: "var(--fg-muted)", marginTop: "0.5rem" }}>
-                            {mode === "login" ? (
-                                <>Need an admin account? <Link to="/sec/admin/signup" style={{ color: "var(--fg)", fontWeight: 500 }}>Setup</Link></>
-                            ) : (
-                                <>Already an admin? <Link to="/sec/admin/login" style={{ color: "var(--fg)", fontWeight: 500 }}>Login</Link></>
-                            )}
-                        </p>
-                    </form>
-                )}
+                    </button>
+                    <p style={{ textAlign: "center", fontSize: "0.8125rem", color: "var(--fg-muted)", marginTop: "0.5rem" }}>
+                        {mode === "login" ? (
+                            <>Need an admin account? <Link to="/sec/admin/signup" style={{ color: "var(--fg)", fontWeight: 500 }}>Setup</Link></>
+                        ) : (
+                            <>Already an admin? <Link to="/sec/admin/login" style={{ color: "var(--fg)", fontWeight: 500 }}>Login</Link></>
+                        )}
+                    </p>
+                </form>
             </div>
         </div>
     );
