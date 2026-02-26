@@ -51,23 +51,16 @@ export const AdminDashboard = () => {
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    marginBottom: "2rem",
+                    marginBottom: "2.5rem",
                     flexWrap: "wrap",
                     gap: "1rem",
                 }}
             >
                 <div>
-                    <h1
-                        style={{
-                            fontSize: "1.75rem",
-                            fontWeight: 800,
-                            letterSpacing: "-0.04em",
-                            marginBottom: "0.25rem",
-                        }}
-                    >
+                    <h1 style={{ fontSize: "1.5rem", marginBottom: "0.25rem" }}>
                         Admin Dashboard
                     </h1>
-                    <p style={{ color: "var(--fg-muted)", fontSize: "0.9rem" }}>
+                    <p style={{ color: "var(--fg-muted)", fontSize: "0.875rem" }}>
                         Manage subjects, event types, and upload academic events.
                     </p>
                 </div>
@@ -77,23 +70,24 @@ export const AdminDashboard = () => {
                     style={{
                         display: "flex",
                         alignItems: "center",
-                        gap: "0.5rem",
-                        padding: "0.5rem 1rem",
+                        gap: "0.35rem",
+                        padding: "0.4rem 0.75rem",
                         borderRadius: "var(--radius-sm)",
-                        background: "rgba(239,68,68,0.1)",
-                        border: "1px solid rgba(239,68,68,0.25)",
-                        color: "#f87171",
-                        fontSize: "0.85rem",
-                        fontWeight: 600,
+                        background: "var(--bg-surface)",
+                        border: "1px solid var(--border)",
+                        color: "var(--fg)",
+                        fontSize: "0.8125rem",
+                        fontWeight: 500,
                         fontFamily: "var(--font)",
                         cursor: "pointer",
-                        transition: "all 0.2s",
+                        transition: "all 0.15s",
+                        boxShadow: "var(--shadow-sm)"
                     }}
-                    onMouseOver={e => { (e.currentTarget as HTMLElement).style.background = "rgba(239,68,68,0.18)"; }}
-                    onMouseOut={e => { (e.currentTarget as HTMLElement).style.background = "rgba(239,68,68,0.1)"; }}
+                    onMouseOver={e => { (e.currentTarget as HTMLElement).style.background = "var(--bg-raised)"; }}
+                    onMouseOut={e => { (e.currentTarget as HTMLElement).style.background = "var(--bg-surface)"; }}
                 >
-                    <LogOut size={15} />
-                    Logout
+                    <LogOut size={14} />
+                    Sign out
                 </button>
             </div>
 
@@ -101,14 +95,14 @@ export const AdminDashboard = () => {
             <div
                 style={{
                     display: "grid",
-                    gridTemplateColumns: "220px 1fr",
-                    gap: "2rem",
+                    gridTemplateColumns: "200px 1fr",
+                    gap: "2.5rem",
                     alignItems: "start",
                 }}
             >
                 {/* Sidebar */}
                 <aside>
-                    <nav style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
+                    <nav style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
                         {tabs.map(tab => {
                             const active = isActive(tab.path);
                             return (
@@ -118,20 +112,18 @@ export const AdminDashboard = () => {
                                     style={{
                                         display: "flex",
                                         alignItems: "center",
-                                        gap: "0.75rem",
-                                        padding: "0.7rem 1rem",
+                                        gap: "0.5rem",
+                                        padding: "0.5rem 0.75rem",
                                         borderRadius: "var(--radius-sm)",
                                         fontSize: "0.875rem",
-                                        fontWeight: active ? 700 : 500,
-                                        color: active ? "var(--primary)" : "var(--fg-muted)",
-                                        background: active ? "var(--primary-dim)" : "transparent",
-                                        border: `1px solid ${active ? "rgba(45,212,191,0.25)" : "transparent"}`,
+                                        fontWeight: active ? 600 : 500,
+                                        color: active ? "var(--fg)" : "var(--fg-subtle)",
+                                        background: active ? "var(--bg-raised)" : "transparent",
                                         textDecoration: "none",
-                                        transition: "all 0.2s",
-                                        boxShadow: active ? "var(--glow)" : "none",
+                                        transition: "all 0.15s",
                                     }}
                                 >
-                                    <tab.icon size={16} />
+                                    <tab.icon size={16} strokeWidth={active ? 2.5 : 2} />
                                     {tab.name}
                                 </Link>
                             );
@@ -141,12 +133,10 @@ export const AdminDashboard = () => {
 
                 {/* Content panel */}
                 <main
-                    className="premium-glass"
+                    className="surface fade-in"
                     style={{
-                        borderRadius: "var(--radius-lg)",
                         padding: "2rem",
                         minHeight: "500px",
-                        border: "1px solid var(--border-strong)",
                     }}
                 >
                     <Routes>

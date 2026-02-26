@@ -1,44 +1,50 @@
 /* ── Google Fonts ──────────────────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 
 /* ── Design Tokens ─────────────────────────────────────────────────────── */
 :root {
-  /* Core palette */
-  --bg: #080d1a;
-  --bg-surface: #0f1729;
-  --bg-raised: #162035;
-  --bg-input: #0c1424;
+  /* Pristine Light Palette */
+  --bg: #fafafa;
+  /* Subtlest gray background */
+  --bg-surface: #ffffff;
+  /* Pure white cards/panels */
+  --bg-raised: #f4f4f5;
+  /* Subtle hover/active states */
+  --bg-input: #ffffff;
 
-  /* Primary — teal glow */
-  --primary: #2dd4bf;
-  --primary-dim: rgba(45, 212, 191, 0.15);
-  --primary-hover: #5eead4;
+  /* Primary action (Sleek black) */
+  --primary: #09090b;
+  --primary-hover: #27272a;
 
-  /* Accent — soft indigo */
-  --accent: #818cf8;
-  --accent-dim: rgba(129, 140, 248, 0.15);
+  /* Accent (Clean blue for active states if needed) */
+  --accent: #2563eb;
+  --accent-dim: rgba(37, 99, 235, 0.1);
 
-  /* Text */
-  --fg: #f1f5f9;
-  --fg-muted: #64748b;
-  --fg-subtle: #334155;
+  /* Typography */
+  --fg: #09090b;
+  /* Crisp almost-black */
+  --fg-subtle: #52525b;
+  /* Medium gray for labels */
+  --fg-muted: #71717a;
+  /* Lighter gray for helpers */
 
-  /* Borders & glass */
-  --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.14);
-  --glass: rgba(15, 23, 42, 0.6);
-  --glass-border: rgba(255, 255, 255, 0.07);
+  /* Borders & Shadows */
+  --border: #e4e4e7;
+  /* Crisp 1px structural lines */
+  --border-strong: #d4d4d8;
+  /* slightly darker for inputs */
 
   /* Misc */
-  --radius: 0.875rem;
-  --radius-sm: 0.5rem;
-  --radius-lg: 1.25rem;
-  --font: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
-  --shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
-  --shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.5);
-  --glow: 0 0 24px rgba(45, 212, 191, 0.18);
-  --glow-lg: 0 0 48px rgba(45, 212, 191, 0.25);
+  --radius: 8px;
+  --radius-sm: 6px;
+  --radius-lg: 12px;
+  --font: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Clean structural shadows. No colored glows. */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
 
   /* Legacy aliases for backward compat */
   --background: var(--bg);
@@ -66,31 +72,28 @@ body {
   color: var(--fg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  line-height: 1.6;
+  line-height: 1.5;
   min-height: 100vh;
-  /* subtle grid texture */
-  background-image:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(45, 212, 191, 0.08) 0%, transparent 60%),
-    linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
-  background-size: 100% 100%, 48px 48px, 48px 48px;
 }
 
 /* ── Typography utilities ──────────────────────────────────────────────── */
-.gradient-text {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  letter-spacing: -0.02em;
+  font-weight: 600;
+  color: var(--fg);
 }
 
-/* ── Glass surface ─────────────────────────────────────────────────────── */
-.premium-glass {
-  background: var(--glass);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--shadow);
+/* ── Structural Surfaces ───────────────────────────────────────────────── */
+.surface {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius);
 }
 
 /* ── Buttons ───────────────────────────────────────────────────────────── */
@@ -99,59 +102,49 @@ body {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.625rem 1.25rem;
+  padding: 0.5rem 1rem;
   border-radius: var(--radius-sm);
   font-family: var(--font);
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
-  border: none;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
   white-space: nowrap;
-  letter-spacing: 0.01em;
 }
 
+/* Primary: Solid near-black, classic SaaS style */
 .btn-primary {
-  background: linear-gradient(135deg, var(--primary), #0d9488);
-  color: #080d1a;
-  box-shadow: 0 0 20px rgba(45, 212, 191, 0.3);
+  background: var(--primary);
+  color: #ffffff;
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, var(--primary-hover), var(--primary));
-  box-shadow: var(--glow);
-  transform: translateY(-1px);
+  background: var(--primary-hover);
 }
 
-.btn-primary:active {
-  transform: translateY(0);
-}
-
+/* Ghost: Transparent to gray */
 .btn-ghost {
   background: transparent;
-  color: var(--fg-muted);
-  border: 1px solid transparent;
+  color: var(--fg-subtle);
 }
 
 .btn-ghost:hover {
   background: var(--bg-raised);
   color: var(--fg);
-  border-color: var(--border);
 }
 
-.btn-ghost:active {
-  transform: scale(0.98);
-}
-
+/* Outline: White with crisp border */
 .btn-outline {
-  background: transparent;
-  color: var(--primary);
-  border: 1px solid var(--primary);
+  background: var(--bg-surface);
+  color: var(--fg);
+  border-color: var(--border);
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-outline:hover {
-  background: var(--primary-dim);
-  box-shadow: var(--glow);
+  background: var(--bg-raised);
 }
 
 /* ── Form elements ─────────────────────────────────────────────────────── */
@@ -164,19 +157,21 @@ textarea {
   color: var(--fg);
   border-radius: var(--radius-sm);
   font-size: 0.875rem;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  padding: 0.5rem 0.75rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
   outline: none;
+  box-shadow: var(--shadow-sm);
 }
 
 input:focus,
 select:focus,
 textarea:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.12);
+  box-shadow: 0 0 0 1px var(--primary);
 }
 
-select option {
-  background: var(--bg-surface);
+input::placeholder {
+  color: #a1a1aa;
 }
 
 /* ── Scrollbar ─────────────────────────────────────────────────────────── */
@@ -190,12 +185,12 @@ select option {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
+  background: #d4d4d8;
   border-radius: 99px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--fg-muted);
+  background: #a1a1aa;
 }
 
 /* ── Loading spinner ───────────────────────────────────────────────────── */
@@ -206,47 +201,25 @@ select option {
 }
 
 .spinner {
-  width: 36px;
-  height: 36px;
-  border: 3px solid var(--border);
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--border-strong);
   border-top-color: var(--primary);
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: spin 0.6s linear infinite;
 }
 
-/* ── Fade in animation ─────────────────────────────────────────────────── */
-@keyframes fadeUp {
+/* ── Fade animation ────────────────────────────────────────────────────── */
+@keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(16px);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
-.fade-up {
-  animation: fadeUp 0.4s ease-out forwards;
-}
-
-/* ── Badge / tag ───────────────────────────────────────────────────────── */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.2rem 0.6rem;
-  border-radius: 99px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-/* ── Responsive helpers ────────────────────────────────────────────────── */
-@media (max-width: 768px) {
-  .hide-mobile {
-    display: none !important;
-  }
+.fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
 }

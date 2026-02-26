@@ -29,7 +29,7 @@ export const FilterBar: FC<FilterBarProps> = ({ subjects, selectedSubjects, onCh
             style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "0.625rem",
+                gap: "0.5rem",
                 flexWrap: "wrap",
             }}
         >
@@ -38,35 +38,34 @@ export const FilterBar: FC<FilterBarProps> = ({ subjects, selectedSubjects, onCh
                 style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: "0.35rem",
+                    gap: "0.25rem",
                     fontSize: "0.75rem",
-                    fontWeight: 700,
+                    fontWeight: 600,
                     color: "var(--fg-muted)",
-                    letterSpacing: "0.06em",
                     textTransform: "uppercase",
                     flexShrink: 0,
+                    marginRight: "0.5rem",
                 }}
             >
-                <SlidersHorizontal size={13} />
-                Filter
+                <SlidersHorizontal size={14} />
             </span>
 
             {/* All chip */}
             <button
                 onClick={() => onChange([])}
                 style={{
-                    padding: "0.3rem 0.8rem",
+                    padding: "0.25rem 0.75rem",
                     borderRadius: "99px",
-                    fontSize: "0.78rem",
-                    fontWeight: 600,
+                    fontSize: "0.8125rem",
+                    fontWeight: 500,
                     fontFamily: "var(--font)",
                     cursor: "pointer",
                     border: "1px solid",
-                    transition: "all 0.2s",
-                    background: isAll ? "var(--primary-dim)" : "var(--bg-raised)",
-                    color: isAll ? "var(--primary)" : "var(--fg-muted)",
-                    borderColor: isAll ? "rgba(45,212,191,0.4)" : "var(--border)",
-                    boxShadow: isAll ? "var(--glow)" : "none",
+                    transition: "all 0.15s",
+                    background: isAll ? "var(--fg)" : "var(--bg-surface)",
+                    color: isAll ? "#ffffff" : "var(--fg-muted)",
+                    borderColor: isAll ? "var(--fg)" : "var(--border)",
+                    boxShadow: isAll ? "var(--shadow-sm)" : "none",
                 }}
             >
                 All
@@ -82,29 +81,27 @@ export const FilterBar: FC<FilterBarProps> = ({ subjects, selectedSubjects, onCh
                         style={{
                             display: "flex",
                             alignItems: "center",
-                            gap: "0.4rem",
-                            padding: "0.3rem 0.8rem",
+                            gap: "0.35rem",
+                            padding: "0.25rem 0.75rem",
                             borderRadius: "99px",
-                            fontSize: "0.78rem",
-                            fontWeight: 600,
+                            fontSize: "0.8125rem",
+                            fontWeight: 500,
                             fontFamily: "var(--font)",
                             cursor: "pointer",
                             border: "1px solid",
-                            transition: "all 0.2s",
-                            background: active ? `${subject.color}18` : "var(--bg-raised)",
+                            transition: "all 0.15s",
+                            background: active ? `${subject.color}10` : "var(--bg-surface)",
                             color: active ? subject.color : "var(--fg-muted)",
-                            borderColor: active ? `${subject.color}55` : "var(--border)",
-                            boxShadow: active ? `0 0 12px ${subject.color}30` : "none",
+                            borderColor: active ? `${subject.color}40` : "var(--border)",
                         }}
                     >
                         <span
                             style={{
-                                width: "7px",
-                                height: "7px",
+                                width: "6px",
+                                height: "6px",
                                 borderRadius: "50%",
                                 background: subject.color,
-                                flexShrink: 0,
-                                boxShadow: active ? `0 0 6px ${subject.color}` : "none",
+                                opacity: active ? 1 : 0.5,
                             }}
                         />
                         {subject.name}

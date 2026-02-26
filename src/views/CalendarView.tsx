@@ -24,35 +24,27 @@ export const CalendarView = () => {
     return (
         <Layout>
             {/* ── Page header ── */}
-            <div style={{ marginBottom: "2.5rem" }}>
-                <h1
-                    style={{
-                        fontSize: "2rem",
-                        fontWeight: 800,
-                        letterSpacing: "-0.04em",
-                        marginBottom: "0.4rem",
-                        lineHeight: 1.1,
-                    }}
-                >
+            <div style={{ marginBottom: "2rem" }}>
+                <h1 style={{ fontSize: "1.75rem", marginBottom: "0.25rem" }}>
                     Academic Calendar
                     <span
                         style={{
                             display: "inline-block",
-                            marginLeft: "0.5rem",
-                            fontSize: "0.9rem",
+                            marginLeft: "0.75rem",
+                            fontSize: "0.75rem",
                             fontWeight: 600,
-                            color: "var(--primary)",
-                            background: "var(--primary-dim)",
-                            padding: "0.2rem 0.6rem",
+                            color: "var(--fg)",
+                            background: "var(--bg-raised)",
+                            border: "1px solid var(--border)",
+                            padding: "0.15rem 0.5rem",
                             borderRadius: "99px",
                             verticalAlign: "middle",
-                            letterSpacing: "0.01em",
                         }}
                     >
                         {new Date().getFullYear()}
                     </span>
                 </h1>
-                <p style={{ color: "var(--fg-muted)", fontSize: "0.95rem", marginBottom: "1.25rem" }}>
+                <p style={{ color: "var(--fg-muted)", fontSize: "0.875rem", marginBottom: "1.25rem" }}>
                     Click any date to see scheduled events.
                 </p>
 
@@ -67,14 +59,7 @@ export const CalendarView = () => {
             </div>
 
             {/* ── Calendar card ── */}
-            <div
-                className="premium-glass"
-                style={{
-                    borderRadius: "var(--radius-lg)",
-                    padding: "2rem",
-                    minHeight: "560px",
-                }}
-            >
+            <div className="surface" style={{ padding: "1.5rem", minHeight: "560px" }}>
                 {loading ? (
                     <div
                         style={{
@@ -87,8 +72,8 @@ export const CalendarView = () => {
                         }}
                     >
                         <div className="spinner" />
-                        <p style={{ color: "var(--fg-muted)", fontSize: "0.9rem" }}>
-                            Loading events…
+                        <p style={{ color: "var(--fg-muted)", fontSize: "0.875rem" }}>
+                            Loading calendar…
                         </p>
                     </div>
                 ) : (

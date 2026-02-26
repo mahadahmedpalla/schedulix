@@ -33,47 +33,16 @@ export const Login = () => {
                 alignItems: "center",
                 justifyContent: "center",
                 padding: "2rem",
-                position: "relative",
-                overflow: "hidden",
+                background: "var(--bg)", /* pristine light gray */
             }}
         >
-            {/* Ambient glow orbs */}
-            <div
-                style={{
-                    position: "absolute",
-                    width: "600px",
-                    height: "600px",
-                    borderRadius: "50%",
-                    background: "radial-gradient(circle, rgba(45,212,191,0.08) 0%, transparent 70%)",
-                    top: "-100px",
-                    left: "-200px",
-                    pointerEvents: "none",
-                }}
-            />
-            <div
-                style={{
-                    position: "absolute",
-                    width: "500px",
-                    height: "500px",
-                    borderRadius: "50%",
-                    background: "radial-gradient(circle, rgba(129,140,248,0.07) 0%, transparent 70%)",
-                    bottom: "-100px",
-                    right: "-150px",
-                    pointerEvents: "none",
-                }}
-            />
-
             {/* Card */}
             <div
-                className="premium-glass fade-up"
+                className="surface fade-in"
                 style={{
                     width: "100%",
-                    maxWidth: "420px",
-                    borderRadius: "var(--radius-lg)",
+                    maxWidth: "400px",
                     padding: "2.5rem",
-                    border: "1px solid var(--border-strong)",
-                    position: "relative",
-                    zIndex: 1,
                 }}
             >
                 {/* Back link */}
@@ -82,16 +51,17 @@ export const Login = () => {
                     style={{
                         display: "flex",
                         alignItems: "center",
-                        gap: "0.35rem",
+                        gap: "0.25rem",
                         background: "none",
                         border: "none",
                         color: "var(--fg-muted)",
-                        fontSize: "0.8rem",
+                        fontSize: "0.75rem",
+                        fontWeight: 500,
                         fontFamily: "var(--font)",
                         cursor: "pointer",
                         padding: "0",
                         marginBottom: "2rem",
-                        transition: "color 0.2s",
+                        transition: "color 0.15s",
                     }}
                     onMouseOver={e => (e.currentTarget.style.color = "var(--fg)")}
                     onMouseOut={e => (e.currentTarget.style.color = "var(--fg-muted)")}
@@ -100,36 +70,35 @@ export const Login = () => {
                     Back to Calendar
                 </button>
 
-                {/* Logo */}
-                <div style={{ textAlign: "center", marginBottom: "2rem" }}>
+                {/* Header */}
+                <div style={{ marginBottom: "2rem" }}>
                     <div
                         style={{
-                            width: "52px",
-                            height: "52px",
-                            background: "linear-gradient(135deg, var(--primary), #0d9488)",
-                            borderRadius: "14px",
+                            width: "40px",
+                            height: "40px",
+                            background: "var(--primary)",
+                            borderRadius: "8px",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            color: "#080d1a",
-                            margin: "0 auto 1rem",
-                            boxShadow: "var(--glow-lg)",
+                            color: "#ffffff",
+                            marginBottom: "1rem",
                         }}
                     >
-                        <CalendarDays size={24} strokeWidth={2.5} />
+                        <CalendarDays size={20} />
                     </div>
                     <h1
                         style={{
-                            fontSize: "1.5rem",
-                            fontWeight: 800,
-                            letterSpacing: "-0.03em",
-                            marginBottom: "0.35rem",
+                            fontSize: "1.25rem",
+                            fontWeight: 600,
+                            letterSpacing: "-0.01em",
+                            marginBottom: "0.25rem",
                         }}
                     >
-                        Admin Login
+                        Sign in to Schedulix
                     </h1>
-                    <p style={{ color: "var(--fg-muted)", fontSize: "0.85rem" }}>
-                        Sign in to manage subjects and events
+                    <p style={{ color: "var(--fg-muted)", fontSize: "0.875rem" }}>
+                        Admin access required
                     </p>
                 </div>
 
@@ -137,12 +106,12 @@ export const Login = () => {
                 {error && (
                     <div
                         style={{
-                            background: "rgba(239,68,68,0.1)",
-                            border: "1px solid rgba(239,68,68,0.3)",
-                            color: "#f87171",
+                            background: "#fef2f2", /* subtle red */
+                            border: "1px solid #fecaca",
+                            color: "#b91c1c",
                             borderRadius: "var(--radius-sm)",
-                            padding: "0.75rem 1rem",
-                            fontSize: "0.85rem",
+                            padding: "0.75rem",
+                            fontSize: "0.8125rem",
                             marginBottom: "1.5rem",
                             fontWeight: 500,
                         }}
@@ -152,31 +121,30 @@ export const Login = () => {
                 )}
 
                 {/* Form */}
-                <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}>
+                <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
                     {/* Email */}
                     <div>
                         <label
                             style={{
                                 display: "block",
-                                fontSize: "0.78rem",
-                                fontWeight: 700,
-                                color: "var(--fg-muted)",
-                                letterSpacing: "0.05em",
-                                textTransform: "uppercase",
-                                marginBottom: "0.5rem",
+                                fontSize: "0.8125rem",
+                                fontWeight: 500,
+                                color: "var(--fg)",
+                                marginBottom: "0.4rem",
                             }}
                         >
-                            Email
+                            Email address
                         </label>
                         <div style={{ position: "relative" }}>
                             <Mail
-                                size={15}
+                                size={16}
+                                strokeWidth={1.5}
                                 style={{
                                     position: "absolute",
-                                    left: "0.875rem",
+                                    left: "0.75rem",
                                     top: "50%",
                                     transform: "translateY(-50%)",
-                                    color: "var(--fg-muted)",
+                                    color: "var(--fg-subtle)",
                                     pointerEvents: "none",
                                 }}
                             />
@@ -188,8 +156,7 @@ export const Login = () => {
                                 required
                                 style={{
                                     width: "100%",
-                                    padding: "0.75rem 1rem 0.75rem 2.5rem",
-                                    borderRadius: "var(--radius-sm)",
+                                    padding: "0.5rem 0.75rem 0.5rem 2.25rem",
                                 }}
                             />
                         </div>
@@ -200,25 +167,24 @@ export const Login = () => {
                         <label
                             style={{
                                 display: "block",
-                                fontSize: "0.78rem",
-                                fontWeight: 700,
-                                color: "var(--fg-muted)",
-                                letterSpacing: "0.05em",
-                                textTransform: "uppercase",
-                                marginBottom: "0.5rem",
+                                fontSize: "0.8125rem",
+                                fontWeight: 500,
+                                color: "var(--fg)",
+                                marginBottom: "0.4rem",
                             }}
                         >
                             Password
                         </label>
                         <div style={{ position: "relative" }}>
                             <Lock
-                                size={15}
+                                size={16}
+                                strokeWidth={1.5}
                                 style={{
                                     position: "absolute",
-                                    left: "0.875rem",
+                                    left: "0.75rem",
                                     top: "50%",
                                     transform: "translateY(-50%)",
-                                    color: "var(--fg-muted)",
+                                    color: "var(--fg-subtle)",
                                     pointerEvents: "none",
                                 }}
                             />
@@ -230,8 +196,7 @@ export const Login = () => {
                                 required
                                 style={{
                                     width: "100%",
-                                    padding: "0.75rem 1rem 0.75rem 2.5rem",
-                                    borderRadius: "var(--radius-sm)",
+                                    padding: "0.5rem 0.75rem 0.5rem 2.25rem",
                                 }}
                             />
                         </div>
@@ -242,12 +207,12 @@ export const Login = () => {
                         type="submit"
                         disabled={loading}
                         className="btn btn-primary"
-                        style={{ width: "100%", padding: "0.875rem", marginTop: "0.5rem", fontSize: "0.9rem" }}
+                        style={{ width: "100%", marginTop: "0.5rem", height: "40px" }}
                     >
-                        {loading ? "Signing in…" : (
+                        {loading ? <div className="spinner" style={{ width: "16px", height: "16px", borderWidth: "2px" }} /> : (
                             <>
-                                Sign In
-                                <LogIn size={16} />
+                                Sign in
+                                <LogIn size={14} />
                             </>
                         )}
                     </button>

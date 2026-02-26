@@ -66,7 +66,7 @@ export const Calendar: FC<CalendarProps> = ({ events, onDateClick }) => {
                             <span
                                 key={i}
                                 className="event-dot"
-                                style={{ backgroundColor: e.subjects?.color ?? "var(--primary)", color: e.subjects?.color ?? "var(--primary)" }}
+                                style={{ backgroundColor: e.subjects?.color ?? "var(--fg-subtle)" }}
                             />
                         ))}
                         {dayEvents.length > 4 && (
@@ -83,7 +83,7 @@ export const Calendar: FC<CalendarProps> = ({ events, onDateClick }) => {
             {/* ── Header ── */}
             <div className="calendar-header">
                 <h2 className="calendar-month-title">
-                    {MONTH_NAMES[month]} <span>{year}</span>
+                    {MONTH_NAMES[month]} {year}
                 </h2>
 
                 <div className="calendar-nav">

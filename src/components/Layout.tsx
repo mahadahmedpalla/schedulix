@@ -18,11 +18,9 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
                     {/* Logo */}
                     <a href="/" className="nav-logo">
                         <div className="nav-logo-icon">
-                            <CalendarDays size={18} strokeWidth={2.5} />
+                            <CalendarDays size={20} />
                         </div>
-                        <span className="nav-logo-text">
-                            Schedu<span>lix</span>
-                        </span>
+                        <span className="nav-logo-text">Schedulix</span>
                     </a>
 
                     {/* Nav Links */}
@@ -31,7 +29,6 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
                             href="/"
                             className={`nav-link ${location.pathname === "/" ? "active" : ""}`}
                         >
-                            <CalendarDays size={16} />
                             Calendar
                         </a>
                     </nav>
@@ -39,25 +36,12 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
                     {/* Actions */}
                     <div className="nav-actions">
                         {location.pathname.startsWith("/admin") ? (
-                            <span
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "0.4rem",
-                                    fontSize: "0.8rem",
-                                    color: "var(--primary)",
-                                    fontWeight: 600,
-                                    background: "var(--primary-dim)",
-                                    padding: "0.35rem 0.75rem",
-                                    borderRadius: "99px",
-                                }}
-                            >
+                            <span className="admin-badge">
                                 <ShieldCheck size={14} />
-                                Admin Panel
+                                Admin
                             </span>
                         ) : (
-                            <a href="/login" className="btn btn-outline" style={{ padding: "0.45rem 1rem", fontSize: "0.8rem" }}>
-                                <ShieldCheck size={14} />
+                            <a href="/login" className="btn btn-outline" style={{ padding: "0.35rem 0.75rem", fontSize: "0.75rem" }}>
                                 Admin Login
                             </a>
                         )}
