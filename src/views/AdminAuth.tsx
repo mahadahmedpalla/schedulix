@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { supabase } from "../services/supabase.ts";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { ShieldAlert, Lock, Mail, KeyRound } from "lucide-react";
 
 export const AdminAuth = ({ mode }: { mode: "login" | "signup" }) => {
@@ -9,6 +9,7 @@ export const AdminAuth = ({ mode }: { mode: "login" | "signup" }) => {
     const [adminKey, setAdminKey] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const navigate = useNavigate();
 
     const handleAuth = async (e: FormEvent) => {
         e.preventDefault();
@@ -20,47 +21,47 @@ export const AdminAuth = ({ mode }: { mode: "login" | "signup" }) => {
             const { error: authError } = await supabase.auth.signUp({ email, password });
 
             if (authError) {
-                // Handle the case where the user already exists
-                if (!authError.message.includes("already registered")) {
+                // Allow proceeding even if "already registered" — we'll just sign in next
+                if (!authError.message.toLowerCase().includes("already registered")) {
                     setError(authError.message);
                     setLoading(false);
                     return;
                 }
             }
 
-            // Step 2: Sign in immediately to create an active session
-            // (Supabase may not create a session automatically after signUp if email confirmation is on)
+            // Step 2: Sign in to create an active session
             const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
 
             if (loginError) {
-                setError("Account created but could not sign in automatically: " + loginError.message + ". Please use the Login page instead.");
+                setError("Could not sign in: " + loginError.message);
                 setLoading(false);
                 return;
             }
 
-            // Step 3: Now we have an active session — call the RPC to grant admin role
+            // Step 3: Activate admin role via the secure RPC
             const { data: isSuccess, error: rpcError } = await supabase.rpc("make_admin_via_secret", {
                 secret_key: adminKey,
             });
 
             if (rpcError) {
-                setError("Signed in, but failed to assign admin role. Have you run the admin_rpc_setup.sql in Supabase? Error: " + rpcError.message);
+                setError("Signed in, but could not assign admin role. Have you run admin_rpc_setup.sql in Supabase? Error: " + rpcError.message);
                 setLoading(false);
             } else if (!isSuccess) {
                 setError("Invalid Registration Key. Please check the key and try again.");
                 setLoading(false);
             } else {
-                // Success! Redirect to admin dashboard
-                window.location.href = "/admin";
+                // Use client-side navigation so the in-memory session stays alive
+                navigate("/admin");
             }
         } else {
-            // Login mode — straightforward
-            const { error } = await supabase.auth.signInWithPassword({ email, password });
-            if (error) {
-                setError(error.message);
+            // Login mode
+            const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+            if (loginError) {
+                setError(loginError.message);
                 setLoading(false);
             } else {
-                window.location.href = "/admin";
+                // Use client-side navigation — NOT window.location.href — to avoid losing the session
+                navigate("/admin");
             }
         }
     };
@@ -83,10 +84,10 @@ export const AdminAuth = ({ mode }: { mode: "login" | "signup" }) => {
                     maxWidth: "400px",
                     padding: "2.5rem",
                     position: "relative",
-                    overflow: "hidden"
+                    overflow: "hidden",
                 }}
             >
-                {/* Top accent line exclusively for the admin portal */}
+                {/* Top accent line */}
                 <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "3px", background: "var(--fg)" }} />
 
                 <div style={{ marginBottom: "2rem" }}>
@@ -144,7 +145,13 @@ export const AdminAuth = ({ mode }: { mode: "login" | "signup" }) => {
                         </label>
                         <div style={{ position: "relative" }}>
                             <Mail size={16} strokeWidth={1.5} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "var(--fg-subtle)", pointerEvents: "none" }} />
-                            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required style={{ width: "100%", padding: "0.5rem 0.75rem 0.5rem 2.25rem" }} />
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+                                required
+                                style={{ width: "100%", padding: "0.5rem 0.75rem 0.5rem 2.25rem" }}
+                            />
                         </div>
                     </div>
 
@@ -154,7 +161,14 @@ export const AdminAuth = ({ mode }: { mode: "login" | "signup" }) => {
                         </label>
                         <div style={{ position: "relative" }}>
                             <Lock size={16} strokeWidth={1.5} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "var(--fg-subtle)", pointerEvents: "none" }} />
-                            <input type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} style={{ width: "100%", padding: "0.5rem 0.75rem 0.5rem 2.25rem" }} />
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                                required
+                                minLength={6}
+                                style={{ width: "100%", padding: "0.5rem 0.75rem 0.5rem 2.25rem" }}
+                            />
                         </div>
                     </div>
 
@@ -165,7 +179,14 @@ export const AdminAuth = ({ mode }: { mode: "login" | "signup" }) => {
                             </label>
                             <div style={{ position: "relative" }}>
                                 <KeyRound size={16} strokeWidth={1.5} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "var(--fg-subtle)", pointerEvents: "none" }} />
-                                <input type="password" value={adminKey} onChange={e => setAdminKey(e.target.value)} required style={{ width: "100%", padding: "0.5rem 0.75rem 0.5rem 2.25rem", borderColor: "var(--fg)" }} placeholder="Enter the secret key..." />
+                                <input
+                                    type="password"
+                                    value={adminKey}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAdminKey(e.target.value)}
+                                    required
+                                    placeholder="Enter the secret key..."
+                                    style={{ width: "100%", padding: "0.5rem 0.75rem 0.5rem 2.25rem", borderColor: "var(--fg)" }}
+                                />
                             </div>
                         </div>
                     )}
@@ -176,10 +197,13 @@ export const AdminAuth = ({ mode }: { mode: "login" | "signup" }) => {
                         className="btn btn-primary"
                         style={{ width: "100%", marginTop: "0.5rem", height: "40px", background: "var(--fg)", color: "var(--bg)" }}
                     >
-                        {loading ? <div className="spinner" style={{ width: "16px", height: "16px", borderWidth: "2px", borderColor: "var(--bg)", borderRightColor: "transparent" }} /> : (
+                        {loading ? (
+                            <div className="spinner" style={{ width: "16px", height: "16px", borderWidth: "2px", borderColor: "var(--bg)", borderRightColor: "transparent" }} />
+                        ) : (
                             <>{mode === "login" ? "Authenticate" : "Initialize Account"}</>
                         )}
                     </button>
+
                     <p style={{ textAlign: "center", fontSize: "0.8125rem", color: "var(--fg-muted)", marginTop: "0.5rem" }}>
                         {mode === "login" ? (
                             <>Need an admin account? <Link to="/sec/admin/signup" style={{ color: "var(--fg)", fontWeight: 500 }}>Setup</Link></>
