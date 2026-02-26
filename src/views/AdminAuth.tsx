@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { supabase } from "../services/supabase.ts";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { ShieldAlert, Lock, Mail, KeyRound } from "lucide-react";
 
 export const AdminAuth = ({ mode }: { mode: "login" | "signup" }) => {
@@ -10,7 +10,6 @@ export const AdminAuth = ({ mode }: { mode: "login" | "signup" }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
-    const navigate = useNavigate();
 
     const handleAuth = async (e: FormEvent) => {
         e.preventDefault();
