@@ -1,39 +1,73 @@
 import type { FC, ReactNode } from "react";
-import { Calendar, User } from 'lucide-react';
+import { useLocation } from "react-router-dom";
+import { CalendarDays, ShieldCheck } from "lucide-react";
+import "./Layout.css";
 
 interface LayoutProps {
     children: ReactNode;
 }
 
 export const Layout: FC<LayoutProps> = ({ children }) => {
+    const location = useLocation();
+
     return (
-        <div className="layout-container" style={{ display: 'flex', minHeight: '100vh', background: 'var(--background)' }}>
-            {/* Sidebar */}
-            <aside className="premium-glass" style={{ width: '280px', padding: '2rem', display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--border)', zIndex: 10 }}>
-                <div className="logo" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '3rem' }}>
-                    <div style={{ background: 'var(--primary)', padding: '0.5rem', borderRadius: '0.5rem', color: 'white' }}>
-                        <Calendar size={20} />
-                    </div>
-                    <span style={{ fontSize: '1.25rem', fontWeight: 700, letterSpacing: '-0.02em' }}>Schedulix</span>
-                </div>
-
-                <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <a href="/" className="btn btn-ghost" style={{ justifyContent: 'flex-start', background: 'var(--primary-light)', color: 'var(--primary)' }}>
-                        <Calendar size={18} />
-                        Calendar
+        <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+            {/* ── Top Navbar ── */}
+            <header className="navbar">
+                <div className="navbar-inner">
+                    {/* Logo */}
+                    <a href="/" className="nav-logo">
+                        <div className="nav-logo-icon">
+                            <CalendarDays size={18} strokeWidth={2.5} />
+                        </div>
+                        <span className="nav-logo-text">
+                            Schedu<span>lix</span>
+                        </span>
                     </a>
-                    <div style={{ marginTop: 'auto', paddingTop: '2rem', borderTop: '1px solid var(--border)' }}>
-                        <a href="/login" className="btn btn-ghost" style={{ justifyContent: 'flex-start', width: '100%' }}>
-                            <User size={18} />
-                            Admin Login
-                        </a>
-                    </div>
-                </nav>
-            </aside>
 
-            {/* Main Content */}
-            <main style={{ flex: 1, padding: '3rem' }}>
-                <div className="container">
+                    {/* Nav Links */}
+                    <nav className="nav-links">
+                        <a
+                            href="/"
+                            className={`nav-link ${location.pathname === "/" ? "active" : ""}`}
+                        >
+                            <CalendarDays size={16} />
+                            Calendar
+                        </a>
+                    </nav>
+
+                    {/* Actions */}
+                    <div className="nav-actions">
+                        {location.pathname.startsWith("/admin") ? (
+                            <span
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "0.4rem",
+                                    fontSize: "0.8rem",
+                                    color: "var(--primary)",
+                                    fontWeight: 600,
+                                    background: "var(--primary-dim)",
+                                    padding: "0.35rem 0.75rem",
+                                    borderRadius: "99px",
+                                }}
+                            >
+                                <ShieldCheck size={14} />
+                                Admin Panel
+                            </span>
+                        ) : (
+                            <a href="/login" className="btn btn-outline" style={{ padding: "0.45rem 1rem", fontSize: "0.8rem" }}>
+                                <ShieldCheck size={14} />
+                                Admin Login
+                            </a>
+                        )}
+                    </div>
+                </div>
+            </header>
+
+            {/* ── Page Content ── */}
+            <main style={{ flex: 1 }}>
+                <div className="page-wrapper">
                     {children}
                 </div>
             </main>
