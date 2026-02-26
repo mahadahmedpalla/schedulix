@@ -17,45 +17,50 @@ export const AdminAuth = ({ mode }: { mode: "login" | "signup" }) => {
         setError(null);
 
         if (mode === "signup") {
-            // 1. Sign up the user
-            const { data: authData, error: authError } = await supabase.auth.signUp({
-                email,
-                password,
-            });
+            // Step 1: Create the account
+            const { error: authError } = await supabase.auth.signUp({ email, password });
 
             if (authError) {
-                setError(authError.message);
+                // Handle the case where the user already exists
+                if (!authError.message.includes("already registered")) {
+                    setError(authError.message);
+                    setLoading(false);
+                    return;
+                }
+            }
+
+            // Step 2: Sign in immediately to create an active session
+            // (Supabase may not create a session automatically after signUp if email confirmation is on)
+            const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+
+            if (loginError) {
+                setError("Account created but could not sign in automatically: " + loginError.message + ". Please use the Login page instead.");
                 setLoading(false);
                 return;
             }
 
-            // 2. If signup succeeds, call the secure RPC to grant admin role
-            if (authData.user) {
-                const { data: isSuccess, error: rpcError } = await supabase.rpc("make_admin_via_secret", {
-                    secret_key: adminKey,
-                });
+            // Step 3: Now we have an active session — call the RPC to grant admin role
+            const { data: isSuccess, error: rpcError } = await supabase.rpc("make_admin_via_secret", {
+                secret_key: adminKey,
+            });
 
-                if (rpcError) {
-                    setError("Account created, but failed to assign admin role: " + rpcError.message);
-                    setLoading(false);
-                } else if (!isSuccess) {
-                    setError("Account created, but Invalid Admin Key provided.");
-                    setLoading(false);
-                } else {
-                    setSuccess(true);
-                    setLoading(false);
-                }
-            } else {
+            if (rpcError) {
+                setError("Signed in, but failed to assign admin role. Have you run the admin_rpc_setup.sql in Supabase? Error: " + rpcError.message);
                 setLoading(false);
+            } else if (!isSuccess) {
+                setError("Invalid Registration Key. Please check the key and try again.");
+                setLoading(false);
+            } else {
+                // Success! Redirect to admin dashboard
+                window.location.href = "/admin";
             }
         } else {
-            // Login mode
+            // Login mode — straightforward
             const { error } = await supabase.auth.signInWithPassword({ email, password });
             if (error) {
                 setError(error.message);
                 setLoading(false);
             } else {
-                // Redirect to admin dashboard immediately via hard reload to clear React state correctly
                 window.location.href = "/admin";
             }
         }
