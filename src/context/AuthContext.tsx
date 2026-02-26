@@ -22,10 +22,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     useEffect(() => {
         // 1. Get initial session
         supabase.auth.getSession().then(({ data: { session } }) => {
-            const currentUser = session?.user ?? null;
-            setUser(currentUser);
-            if (currentUser) {
-                fetchRole(currentUser.id);
+            setUser(session?.user ?? null);
+            if (session?.user) {
+                fetchRole(session.user.id);
             } else {
                 setLoading(false);
             }
@@ -33,14 +32,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         // 2. Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-            // CRITICAL: Set loading to true FIRST, before setting user.
-            // This prevents AdminDashboard from seeing user + stale role + loading=false
-            // and kicking the user out before fetchRole completes.
+            // CRITICAL: set loading=true FIRST so downstream components (AdminDashboard)
+            // wait for the role to be fetched before making redirect decisions.
             setLoading(true);
-            const currentUser = session?.user ?? null;
-            setUser(currentUser);
-            if (currentUser) {
-                await fetchRole(currentUser.id);
+            setUser(session?.user ?? null);
+            if (session?.user) {
+                await fetchRole(session.user.id);
             } else {
                 setRole(null);
                 setLoading(false);
