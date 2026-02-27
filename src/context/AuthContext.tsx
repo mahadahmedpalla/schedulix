@@ -19,33 +19,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [role, setRole] = useState<"admin" | "student" | null>(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        // 1. Get initial session
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setUser(session?.user ?? null);
-            if (session?.user) {
-                fetchRole(session.user.id);
-            } else {
-                setLoading(false);
-            }
-        });
-
-        // 2. Listen for auth changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-            setUser(session?.user ?? null);
-            if (session?.user) {
-                await fetchRole(session.user.id);
-            } else {
-                setRole(null);
-                setLoading(false);
-            }
-        });
-
-        return () => subscription.unsubscribe();
-    }, []);
-
     const fetchRole = async (userId: string) => {
         try {
+            console.log("Fetching role for user:", userId);
             const { data, error } = await supabase
                 .from("user_roles")
                 .select("role")
@@ -56,15 +32,52 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 console.error("Error fetching role:", error);
             }
 
-            // If no role is found (e.g. newly registered user), they default to null/student logic
-            // but ideally we default to 'student' if we want. For now, role from DB or null.
             setRole(data?.role ?? "student");
         } catch (err) {
-            console.error(err);
+            console.error("Role fetch failed:", err);
+            setRole("student");
         } finally {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        // Fallback timeout: If auth doesn't resolve in 4s, stop loading to prevent white screen
+        const timeout = setTimeout(() => {
+            if (loading) {
+                console.warn("Auth timeout reached - forcing load stop");
+                setLoading(false);
+            }
+        }, 4000);
+
+        // 1. Get initial session
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session?.user) {
+                setUser(session.user);
+                fetchRole(session.user.id);
+            } else {
+                setLoading(false);
+            }
+        });
+
+        // 2. Listen for auth changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+            const currentUser = session?.user ?? null;
+            setUser(currentUser);
+
+            if (currentUser) {
+                await fetchRole(currentUser.id);
+            } else {
+                setRole(null);
+                setLoading(false);
+            }
+        });
+
+        return () => {
+            clearTimeout(timeout);
+            subscription.unsubscribe();
+        };
+    }, []);
 
     return (
         <AuthContext.Provider value={{ user, role, loading }}>

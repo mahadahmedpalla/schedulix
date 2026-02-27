@@ -30,8 +30,6 @@ export const Signup = () => {
         } else {
             setSuccess(true);
             setLoading(false);
-            // Optional auto-redirect:
-            // setTimeout(() => navigate("/"), 2000);
         }
     };
 
