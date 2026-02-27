@@ -1,15 +1,27 @@
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { supabase } from "../services/supabase.ts";
 import { useNavigate, Link } from "react-router-dom";
 import { ShieldAlert, Lock, Mail, KeyRound } from "lucide-react";
+import { useAuth } from "../context/AuthContext.tsx";
 
 export const AdminAuth = ({ mode }: { mode: "login" | "signup" }) => {
+    const { user, role, loading: authLoading } = useAuth();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [adminKey, setAdminKey] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
+
+    // REACTIVE NAVIGATION: 
+    // Instead of forcing navigation in handleAuth, we watch the Auth state.
+    // This prevents race conditions where the dashboard kicks you back 
+    // before the role is fully resolved.
+    useEffect(() => {
+        if (!authLoading && user && role === "admin") {
+            navigate("/admin");
+        }
+    }, [user, role, authLoading, navigate]);
 
     const handleAuth = async (e: FormEvent) => {
         e.preventDefault();
@@ -21,7 +33,6 @@ export const AdminAuth = ({ mode }: { mode: "login" | "signup" }) => {
             const { error: authError } = await supabase.auth.signUp({ email, password });
 
             if (authError) {
-                // Allow proceeding even if "already registered" — we'll just sign in next
                 if (!authError.message.toLowerCase().includes("already registered")) {
                     setError(authError.message);
                     setLoading(false);
@@ -50,9 +61,8 @@ export const AdminAuth = ({ mode }: { mode: "login" | "signup" }) => {
                 setError("Invalid Registration Key. Please check the key and try again.");
                 setLoading(false);
             } else {
-                // Success: AuthProvider will pick up the change and navigate will trigger
+                // Success: The useEffect above will handle navigation once AuthContext resolves the role
                 setLoading(false);
-                navigate("/admin");
             }
         } else {
             // Login mode
@@ -61,9 +71,8 @@ export const AdminAuth = ({ mode }: { mode: "login" | "signup" }) => {
                 setError(loginError.message);
                 setLoading(false);
             } else {
-                // Success
+                // Success: The useEffect above will handle navigation once AuthContext resolves the role
                 setLoading(false);
-                navigate("/admin");
             }
         }
     };
@@ -89,7 +98,6 @@ export const AdminAuth = ({ mode }: { mode: "login" | "signup" }) => {
                     overflow: "hidden",
                 }}
             >
-                {/* Top accent line */}
                 <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "3px", background: "var(--fg)" }} />
 
                 <div style={{ marginBottom: "2rem" }}>
@@ -108,14 +116,7 @@ export const AdminAuth = ({ mode }: { mode: "login" | "signup" }) => {
                     >
                         <ShieldAlert size={20} />
                     </div>
-                    <h1
-                        style={{
-                            fontSize: "1.25rem",
-                            fontWeight: 600,
-                            letterSpacing: "-0.01em",
-                            marginBottom: "0.25rem",
-                        }}
-                    >
+                    <h1 style={{ fontSize: "1.25rem", fontWeight: 600, letterSpacing: "-0.01em", marginBottom: "0.25rem" }}>
                         {mode === "login" ? "Admin Portal Login" : "Initialize Admin Account"}
                     </h1>
                     <p style={{ color: "var(--fg-muted)", fontSize: "0.875rem" }}>

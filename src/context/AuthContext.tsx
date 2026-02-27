@@ -17,13 +17,13 @@ const AuthContext = createContext<AuthState>({
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-    // Instant hydration from localStorage
     const [user, setUser] = useState<User | null>(null);
     const [role, setRole] = useState<"admin" | "student" | null>(() => {
         return localStorage.getItem(STORAGE_KEY) as "admin" | "student" | null;
     });
-    // If we have a role in storage, we can start with loading: false for an instant feel
-    const [loading, setLoading] = useState(!localStorage.getItem(STORAGE_KEY));
+    // We only start with loading: false if we ALREADY have a role AND a session is likely to be there.
+    // To be safe, we'll keep loading as true initially on fresh mount unless we have role.
+    const [loading, setLoading] = useState(true);
 
     const fetchRole = useCallback(async (userId: string) => {
         try {
@@ -61,7 +61,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
                 if (session?.user) {
                     setUser(session.user);
-                    // Refresh role in background
                     await fetchRole(session.user.id);
                 } else {
                     setUser(null);
@@ -71,7 +70,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 }
             } catch (err) {
                 console.error("Initialization error:", err);
-                setLoading(false);
+                if (mounted) setLoading(false);
             }
         };
 
@@ -89,11 +88,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 setLoading(false);
             } else if (e === 'SIGNED_IN' || e === 'TOKEN_REFRESHED' || e === 'USER_UPDATED') {
                 if (session?.user) {
-                    // CRITICAL: Set loading=true IMMEDIATELY so components wait for the role
-                    setLoading(true);
-                    setUser(session.user);
-                    // Fetch role and update storage
-                    await fetchRole(session.user.id);
+                    // Start loading ONLY if we are actually fetching a new role
+                    // or if the role is currently missing
+                    const isNewUser = session.user.id !== user?.id;
+                    if (isNewUser || !role) {
+                        setLoading(true);
+                        setUser(session.user);
+                        await fetchRole(session.user.id);
+                    } else {
+                        setUser(session.user);
+                    }
                 }
             }
         });
@@ -102,7 +106,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             mounted = false;
             subscription.unsubscribe();
         };
-    }, [fetchRole]);
+    }, [fetchRole, user?.id, role]);
 
     return (
         <AuthContext.Provider value={{ user, role, loading }}>

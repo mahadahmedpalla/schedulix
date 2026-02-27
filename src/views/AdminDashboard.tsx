@@ -20,26 +20,26 @@ export const AdminDashboard = () => {
     const location = useLocation();
 
     useEffect(() => {
+        // ONLY redirect if loading is finished.
         if (!loading) {
             if (!user) {
                 // Not logged in at all
                 navigate("/sec/admin/login");
             } else if (role !== null && role !== "admin") {
-                // Logged in, we have a role, and it's NOT admin.
-                // WE ONLY REDIRECT IF ROLE IS EXPLICITLY NOT ADMIN.
-                // If role is null, we are still waiting for fetchRole.
+                // Logged in, we have a role, and it's EXPLICITLY not admin.
+                // We sign out just to be safe and clear any stuck state.
                 supabase.auth.signOut().then(() => navigate("/sec/admin/login"));
             }
         }
     }, [user, role, loading, navigate]);
 
-    // PREVENT BLANK SCREEN & LOOPS: 
-    // We show a very light loader or empty surface while loading
-    if (loading && !role) {
+    // Show a silent background while loading or while we have a user but no confirmed role yet
+    // This (along with the AuthContext changes) prevents the split-second bounce.
+    if (loading || (user && role === null)) {
         return <div style={{ minHeight: '100vh', background: 'var(--bg)' }} />;
     }
 
-    // Still protect against illegal rendering if auth finally resolves to non-admin
+    // Final safety check: if we're not an admin, don't show the dashboard content.
     if (!user || role !== "admin") return null;
 
     const handleLogout = async () => {
