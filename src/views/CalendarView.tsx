@@ -16,10 +16,14 @@ export const CalendarView = () => {
 
 <<<<<<< HEAD
     // For now, fetch a wide range of events
+<<<<<<< HEAD
     const { events, subjects, loading, refetchEvents } = useEvents('2026-01-01', '2026-12-31');
 =======
     const { events, subjects, loading, refetchEvents } = useEvents("2024-01-01", "2027-12-31");
 >>>>>>> parent of 8e9e589 (fixes)
+=======
+    const { events, subjects, loading, refetch } = useEvents('2026-01-01', '2026-12-31');
+>>>>>>> parent of 1dc20a1 (Update CalendarView.tsx)
 
     const filteredEvents = useMemo(() => {
         if (selectedSubjects.length === 0) return events;
@@ -95,6 +99,7 @@ export const CalendarView = () => {
                         onClose={() => setShowAddModal(false)}
                         onSuccess={() => {
                             setShowAddModal(false);
+<<<<<<< HEAD
                             refetchEvents();
 =======
             {/* ── Calendar card ── */}
@@ -109,6 +114,9 @@ export const CalendarView = () => {
                             height: "400px",
                             gap: "1rem",
 >>>>>>> parent of 8e9e589 (fixes)
+=======
+                            refetch();
+>>>>>>> parent of 1dc20a1 (Update CalendarView.tsx)
                         }}
                     >
                         <div className="spinner" />
