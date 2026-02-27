@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode, useCallback } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../services/supabase.ts";
 
@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [role, setRole] = useState<"admin" | "student" | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const fetchRole = async (userId: string) => {
+    const fetchRole = useCallback(async (userId: string) => {
         try {
             const { data, error } = await supabase
                 .from("user_roles")
@@ -30,30 +30,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             if (error && error.code !== "PGRST116") {
                 console.error("Error fetching role:", error);
             }
-            setRole(data?.role ?? "student");
+            const userRole = data?.role ?? "student";
+            setRole(userRole as "admin" | "student");
+            return userRole;
         } catch (err) {
-            console.error(err);
+            console.error("Auth Exception:", err);
             setRole("student");
-        } finally {
-            setLoading(false);
+            return "student";
         }
-    };
+    }, []);
 
     useEffect(() => {
         let mounted = true;
 
         const initializeAuth = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
 
-            if (!mounted) return;
+                if (!mounted) return;
 
-            if (session?.user) {
-                setUser(session.user);
-                await fetchRole(session.user.id);
-            } else {
-                setUser(null);
-                setRole(null);
-                setLoading(false);
+                if (session?.user) {
+                    setUser(session.user);
+                    await fetchRole(session.user.id);
+                } else {
+                    setUser(null);
+                    setRole(null);
+                }
+            } catch (err) {
+                console.error("Initialization error:", err);
+            } finally {
+                if (mounted) setLoading(false);
             }
         };
 
@@ -62,17 +68,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             if (!mounted) return;
 
-            if (event === 'SIGNED_OUT') {
+            if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
                 setUser(null);
                 setRole(null);
                 setLoading(false);
             } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
                 if (session?.user) {
-                    // Only re-fetch if user ID changed or role isn't set yet
-                    if (session.user.id !== user?.id || role === null) {
+                    const isNewUser = session.user.id !== user?.id;
+                    setUser(session.user);
+
+                    // If it's a new user or we don't have a role yet, fetch it
+                    if (isNewUser || role === null) {
                         setLoading(true);
-                        setUser(session.user);
                         await fetchRole(session.user.id);
+                        if (mounted) setLoading(false);
                     }
                 }
             }
@@ -82,7 +91,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             mounted = false;
             subscription.unsubscribe();
         };
-    }, [user?.id, role]);
+    }, [fetchRole]); // Only fetchRole as dependency (stabilized by useCallback)
 
     return (
         <AuthContext.Provider value={{ user, role, loading }}>
