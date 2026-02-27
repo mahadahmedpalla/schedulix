@@ -1,171 +1,225 @@
+/* ── Google Fonts ──────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
+/* ── Design Tokens ─────────────────────────────────────────────────────── */
 :root {
-  --primary: #0d9488;
-  /* Teal 600 */
-  --primary-hover: #0f766e;
-  /* Teal 700 */
-  --primary-light: #f0fdfa;
-  /* Teal 50 */
+  /* Pristine Light Palette */
+  --bg: #fafafa;
+  /* Subtlest gray background */
+  --bg-surface: #ffffff;
+  /* Pure white cards/panels */
+  --bg-raised: #f4f4f5;
+  /* Subtle hover/active states */
+  --bg-input: #ffffff;
 
-  --background: #ffffff;
-  --foreground: #0f172a;
-  /* Slate 900 */
+  /* Primary action (Sleek black) */
+  --primary: #09090b;
+  --primary-hover: #27272a;
 
-  --muted: #f1f5f9;
-  /* Slate 100 */
-  --muted-foreground: #64748b;
-  /* Slate 500 */
+  /* Accent (Clean blue for active states if needed) */
+  --accent: #2563eb;
+  --accent-dim: rgba(37, 99, 235, 0.1);
 
-  --border: #e2e8f0;
-  /* Slate 200 */
-  --radius: 0.75rem;
+  /* Typography */
+  --fg: #09090b;
+  /* Crisp almost-black */
+  --fg-subtle: #52525b;
+  /* Medium gray for labels */
+  --fg-muted: #71717a;
+  /* Lighter gray for helpers */
 
-  --glass: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.3);
+  /* Borders & Shadows */
+  --border: #e4e4e7;
+  /* Crisp 1px structural lines */
+  --border-strong: #d4d4d8;
+  /* slightly darker for inputs */
 
-  --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  /* Misc */
+  --radius: 8px;
+  --radius-sm: 6px;
+  --radius-lg: 12px;
+  --font: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Clean structural shadows. No colored glows. */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+
+  /* Legacy aliases for backward compat */
+  --background: var(--bg);
+  --foreground: var(--fg);
+  --muted: var(--bg-raised);
+  --muted-foreground: var(--fg-muted);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #020617;
-    /* Slate 950 */
-    --foreground: #f8fafc;
-    /* Slate 50 */
-
-    --muted: #1e293b;
-    /* Slate 800 */
-    --muted-foreground: #94a3b8;
-    /* Slate 400 */
-
-    --border: #1e293b;
-    /* Slate 800 */
-
-    --glass: rgba(15, 23, 42, 0.7);
-    --glass-border: rgba(255, 255, 255, 0.1);
-  }
-}
-
-* {
+/* ── Reset ─────────────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  font-family: var(--font-family);
-  background: var(--background);
-  color: var(--foreground);
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--fg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.5;
+  min-height: 100vh;
 }
 
-.premium-glass {
-  background: var(--glass);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--glass-border);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
+/* ── Typography utilities ──────────────────────────────────────────────── */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  letter-spacing: -0.02em;
+  font-weight: 600;
+  color: var(--fg);
 }
 
+/* ── Structural Surfaces ───────────────────────────────────────────────── */
+.surface {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius);
+}
+
+/* ── Buttons ───────────────────────────────────────────────────────────── */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.625rem 1.25rem;
-  border-radius: var(--radius);
-  font-weight: 500;
-  transition: all 0.2s ease;
-  cursor: pointer;
-  border: none;
   gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  font-family: var(--font);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
+  white-space: nowrap;
 }
 
+/* Primary: Solid near-black, classic SaaS style */
 .btn-primary {
   background: var(--primary);
-  color: white;
+  color: #ffffff;
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-primary:hover {
   background: var(--primary-hover);
-  transform: translateY(-1px);
 }
 
+/* Ghost: Transparent to gray */
 .btn-ghost {
   background: transparent;
-  color: var(--muted-foreground);
+  color: var(--fg-subtle);
 }
 
 .btn-ghost:hover {
-  background: var(--muted);
-  color: var(--foreground);
+  background: var(--bg-raised);
+  color: var(--fg);
 }
 
-@media (max-width: 1024px) {
-  .layout-container {
-    flex-direction: column !important;
-  }
+/* Outline: White with crisp border */
+.btn-outline {
+  background: var(--bg-surface);
+  color: var(--fg);
+  border-color: var(--border);
+  box-shadow: var(--shadow-sm);
+}
 
-  aside {
-    width: 100% !important;
-    border-right: none !important;
-    border-bottom: 1px solid var(--border) !important;
-    padding: 1rem 1.5rem !important;
-  }
+.btn-outline:hover {
+  background: var(--bg-raised);
+}
 
-  .logo {
-    margin-bottom: 1rem !important;
-  }
+/* ── Form elements ─────────────────────────────────────────────────────── */
+input,
+select,
+textarea {
+  font-family: var(--font);
+  background: var(--bg-input);
+  border: 1px solid var(--border-strong);
+  color: var(--fg);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  padding: 0.5rem 0.75rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+  box-shadow: var(--shadow-sm);
+}
 
-  nav {
-    flex-direction: row !important;
-    overflow-x: auto !important;
-    padding-bottom: 0.5rem !important;
-  }
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
+}
 
-  main {
-    padding: 1.5rem !important;
-  }
+input::placeholder {
+  color: #a1a1aa;
+}
 
-  .event-detail-panel {
-    width: 100% !important;
+/* ── Scrollbar ─────────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d4d4d8;
+  border-radius: 99px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a1a1aa;
+}
+
+/* ── Loading spinner ───────────────────────────────────────────────────── */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
-@media (max-width: 640px) {
-  .calendar-header {
-    flex-direction: column !important;
-    align-items: flex-start !important;
-    gap: 1rem !important;
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--border-strong);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+/* ── Fade animation ────────────────────────────────────────────────────── */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
   }
 
-  .weekday {
-    padding: 0.5rem !important;
-    font-size: 0.75rem !important;
-  }
-
-  .calendar-day {
-    padding: 0.5rem !important;
-  }
-
-  .day-number {
-    font-size: 0.875rem !important;
+  to {
+    opacity: 1;
   }
 }
 
-/* Enhancements */
-.calendar-day:active {
-  transform: scale(0.95);
-}
-
-.btn:active {
-  transform: scale(0.98);
-}
-
-.premium-glass {
-  transition: box-shadow 0.3s ease;
-}
-
-.premium-glass:hover {
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.08);
+.fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
 }
