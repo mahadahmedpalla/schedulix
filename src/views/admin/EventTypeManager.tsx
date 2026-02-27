@@ -1,5 +1,6 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { supabase } from '../../services/supabase.ts';
+import { useAuth } from '../../context/AuthContext.tsx';
 import { Plus, Trash2, Edit2, Check, X } from 'lucide-react';
 
 interface EventType {
@@ -8,12 +9,15 @@ interface EventType {
 }
 
 export const EventTypeManager = () => {
+    const { user } = useAuth();
     const [types, setTypes] = useState<EventType[]>([]);
     const [loading, setLoading] = useState(true);
     const [newName, setNewName] = useState('');
     const [editingId, setEditingId] = useState<string | null>(null);
 
     const fetchTypes = async () => {
+        if (!user) return;
+
         setLoading(true);
         const { data } = await supabase.from('event_types').select('*').order('created_at', { ascending: false });
         if (data) setTypes(data);
@@ -22,7 +26,7 @@ export const EventTypeManager = () => {
 
     useEffect(() => {
         fetchTypes();
-    }, []);
+    }, [user]);
 
     const handleAdd = async (e: FormEvent) => {
         e.preventDefault();
@@ -82,7 +86,7 @@ export const EventTypeManager = () => {
             </form>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {loading ? <p>Loading...</p> : types.map(type => (
+                {loading ? <p>Loading types...</p> : types.map(type => (
                     <div key={type.id} className="premium-glass" style={{ padding: '1rem 1.5rem', borderRadius: 'var(--radius)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         {editingId === type.id ? (
                             <>

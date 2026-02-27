@@ -1,8 +1,10 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { supabase } from '../../services/supabase.ts';
+import { useAuth } from '../../context/AuthContext.tsx';
 import { Upload, Calendar, Send, CheckCircle } from 'lucide-react';
 
 export const EventUploader = () => {
+    const { user } = useAuth();
     const [subjects, setSubjects] = useState<any[]>([]);
     const [types, setTypes] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -18,6 +20,8 @@ export const EventUploader = () => {
     });
 
     const fetchData = async () => {
+        if (!user) return;
+
         const [subs, typs] = await Promise.all([
             supabase.from('subjects').select('*'),
             supabase.from('event_types').select('*')
@@ -28,7 +32,7 @@ export const EventUploader = () => {
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [user]);
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();

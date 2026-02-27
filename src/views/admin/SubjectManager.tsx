@@ -1,5 +1,6 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { supabase } from '../../services/supabase.ts';
+import { useAuth } from '../../context/AuthContext.tsx';
 import { Plus, Trash2, Edit2, Check, X } from 'lucide-react';
 
 interface Subject {
@@ -9,6 +10,7 @@ interface Subject {
 }
 
 export const SubjectManager = () => {
+    const { user } = useAuth();
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [loading, setLoading] = useState(true);
     const [newName, setNewName] = useState('');
@@ -16,6 +18,9 @@ export const SubjectManager = () => {
     const [editingId, setEditingId] = useState<string | null>(null);
 
     const fetchSubjects = async () => {
+        // If we don't have a user yet, don't try to fetch as RLS will block it
+        if (!user) return;
+
         setLoading(true);
         const { data } = await supabase.from('subjects').select('*').order('created_at', { ascending: false });
         if (data) setSubjects(data);
@@ -24,7 +29,7 @@ export const SubjectManager = () => {
 
     useEffect(() => {
         fetchSubjects();
-    }, []);
+    }, [user]); // Re-fetch whenever user hydrates
 
     const handleAdd = async (e: FormEvent) => {
         e.preventDefault();
@@ -101,7 +106,7 @@ export const SubjectManager = () => {
             </form>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {loading ? <p>Loading...</p> : subjects.map(subject => (
+                {loading ? <p>Loading subjects...</p> : subjects.map(subject => (
                     <div key={subject.id} className="premium-glass" style={{ padding: '1rem 1.5rem', borderRadius: 'var(--radius)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         {editingId === subject.id ? (
                             <>
