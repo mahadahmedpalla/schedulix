@@ -19,34 +19,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [role, setRole] = useState<"admin" | "student" | null>(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        // 1. Get initial session
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setUser(session?.user ?? null);
-            if (session?.user) {
-                fetchRole(session.user.id);
-            } else {
-                setLoading(false);
-            }
-        });
-
-        // 2. Listen for auth changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-            // CRITICAL: set loading=true FIRST so downstream components (AdminDashboard)
-            // wait for the role to be fetched before making redirect decisions.
-            setLoading(true);
-            setUser(session?.user ?? null);
-            if (session?.user) {
-                await fetchRole(session.user.id);
-            } else {
-                setRole(null);
-                setLoading(false);
-            }
-        });
-
-        return () => subscription.unsubscribe();
-    }, []);
-
     const fetchRole = async (userId: string) => {
         try {
             const { data, error } = await supabase
@@ -58,16 +30,59 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             if (error && error.code !== "PGRST116") {
                 console.error("Error fetching role:", error);
             }
-
-            // If no role is found (e.g. newly registered user), they default to null/student logic
-            // but ideally we default to 'student' if we want. For now, role from DB or null.
             setRole(data?.role ?? "student");
         } catch (err) {
             console.error(err);
+            setRole("student");
         } finally {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        let mounted = true;
+
+        const initializeAuth = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+
+            if (!mounted) return;
+
+            if (session?.user) {
+                setUser(session.user);
+                await fetchRole(session.user.id);
+            } else {
+                setUser(null);
+                setRole(null);
+                setLoading(false);
+            }
+        };
+
+        initializeAuth();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            if (!mounted) return;
+
+            if (event === 'SIGNED_OUT') {
+                setUser(null);
+                setRole(null);
+                setLoading(false);
+            } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+                if (session?.user) {
+                    // Only re-fetch if user ID changed or role isn't set yet
+                    if (session.user.id !== user?.id || role === null) {
+                        setLoading(true);
+                        setUser(session.user);
+                        await fetchRole(session.user.id);
+                    }
+                }
+            }
+        });
+
+        return () => {
+            mounted = false;
+            subscription.unsubscribe();
+        };
+    }, [user?.id, role]);
 
     return (
         <AuthContext.Provider value={{ user, role, loading }}>

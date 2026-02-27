@@ -3,7 +3,7 @@ import { useNavigate, Routes, Route, Link, useLocation } from "react-router-dom"
 import { supabase } from "../services/supabase.ts";
 import { useAuth } from "../context/AuthContext.tsx";
 import { Layout } from "../components/Layout.tsx";
-import { BookOpen, Settings, PlusCircle, LogOut } from "lucide-react";
+import { BookOpen, Settings, PlusCircle, LogOut, ShieldCheck } from "lucide-react";
 import { SubjectManager } from "./admin/SubjectManager.tsx";
 import { EventTypeManager } from "./admin/EventTypeManager.tsx";
 import { EventUploader } from "./admin/EventUploader.tsx";
@@ -30,7 +30,46 @@ export const AdminDashboard = () => {
         }
     }, [user, role, loading, navigate]);
 
-    if (loading || !user || role !== "admin") return null;
+    // PREVENT BLANK SCREEN: Show a proper loader while auth is hydrating
+    if (loading || !user || role !== "admin") {
+        return (
+            <div
+                style={{
+                    height: '100vh',
+                    width: '100vw',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'var(--bg)',
+                    gap: '1.5rem'
+                }}
+            >
+                <div
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '64px',
+                        height: '64px',
+                        borderRadius: '16px',
+                        background: 'var(--bg-surface)',
+                        border: '1px solid var(--border)',
+                        color: 'var(--fg)',
+                        boxShadow: 'var(--shadow-md)'
+                    }}
+                >
+                    <ShieldCheck size={32} />
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                    <div className="spinner" style={{ margin: '0 auto 1rem' }} />
+                    <p style={{ color: "var(--fg-muted)", fontSize: "0.875rem", fontWeight: 500 }}>
+                        Verifying Admin Session...
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
