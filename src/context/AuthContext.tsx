@@ -8,6 +8,8 @@ interface AuthState {
     loading: boolean;
 }
 
+const STORAGE_KEY = 'schedulix_auth_role';
+
 const AuthContext = createContext<AuthState>({
     user: null,
     role: null,
@@ -15,9 +17,13 @@ const AuthContext = createContext<AuthState>({
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
+    // Instant hydration from localStorage
     const [user, setUser] = useState<User | null>(null);
-    const [role, setRole] = useState<"admin" | "student" | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [role, setRole] = useState<"admin" | "student" | null>(() => {
+        return localStorage.getItem(STORAGE_KEY) as "admin" | "student" | null;
+    });
+    // If we have a role in storage, we can start with loading: false for an instant feel
+    const [loading, setLoading] = useState(!localStorage.getItem(STORAGE_KEY));
 
     const fetchRole = useCallback(async (userId: string) => {
         try {
@@ -32,11 +38,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
             const userRole = data?.role ?? "student";
             setRole(userRole as "admin" | "student");
+            localStorage.setItem(STORAGE_KEY, userRole);
             return userRole;
         } catch (err) {
             console.error("Auth Exception:", err);
             setRole("student");
+            localStorage.setItem(STORAGE_KEY, "student");
             return "student";
+        } finally {
+            setLoading(false);
         }
     }, []);
 
@@ -51,15 +61,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
                 if (session?.user) {
                     setUser(session.user);
+                    // Refresh role in background
                     await fetchRole(session.user.id);
                 } else {
                     setUser(null);
                     setRole(null);
+                    localStorage.removeItem(STORAGE_KEY);
+                    setLoading(false);
                 }
             } catch (err) {
                 console.error("Initialization error:", err);
-            } finally {
-                if (mounted) setLoading(false);
+                setLoading(false);
             }
         };
 
@@ -73,18 +85,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             if (e === 'SIGNED_OUT' || e === 'USER_DELETED') {
                 setUser(null);
                 setRole(null);
+                localStorage.removeItem(STORAGE_KEY);
                 setLoading(false);
             } else if (e === 'SIGNED_IN' || e === 'TOKEN_REFRESHED' || e === 'USER_UPDATED') {
                 if (session?.user) {
-                    const isNewUser = session.user.id !== user?.id;
                     setUser(session.user);
-
-                    // If it's a new user or we don't have a role yet, fetch it
-                    if (isNewUser || role === null) {
-                        setLoading(true);
-                        await fetchRole(session.user.id);
-                        if (mounted) setLoading(false);
-                    }
+                    // Fetch role and update storage
+                    await fetchRole(session.user.id);
                 }
             }
         });
@@ -93,7 +100,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             mounted = false;
             subscription.unsubscribe();
         };
-    }, [fetchRole]); // Only fetchRole as dependency (stabilized by useCallback)
+    }, [fetchRole]);
 
     return (
         <AuthContext.Provider value={{ user, role, loading }}>
