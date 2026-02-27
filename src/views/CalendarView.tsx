@@ -15,7 +15,7 @@ export const CalendarView = () => {
     const [showAddModal, setShowAddModal] = useState(false);
 
     // For now, fetch a wide range of events
-    const { events, subjects, loading, refetch } = useEvents('2026-01-01', '2026-12-31');
+    const { events, subjects, loading, refetchEvents } = useEvents('2026-01-01', '2026-12-31');
 
     const filteredEvents = useMemo(() => {
         if (selectedSubjects.length === 0) return events;
@@ -82,7 +82,7 @@ export const CalendarView = () => {
                         onClose={() => setShowAddModal(false)}
                         onSuccess={() => {
                             setShowAddModal(false);
-                            refetch();
+                            refetchEvents();
                         }}
                     />
                 )}
