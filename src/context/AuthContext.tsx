@@ -17,13 +17,12 @@ const AuthContext = createContext<AuthState>({
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-    // 1. Initial State from localStorage for "Instant Feel"
     const [user, setUser] = useState<User | null>(null);
     const [role, setRole] = useState<"admin" | "student" | null>(() => {
         return localStorage.getItem(STORAGE_KEY) as "admin" | "student" | null;
     });
 
-    // If we have a role in storage, we don't need a blocking loader!
+    // We only start with loading: false if we have a cached role.
     const [loading, setLoading] = useState(!localStorage.getItem(STORAGE_KEY));
 
     const fetchRole = useCallback(async (userId: string) => {
@@ -54,14 +53,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     useEffect(() => {
         let mounted = true;
 
-        // Fetch session on mount
-        const getInitialSession = async () => {
+        // Consolidate: Fetch session and then listen for changes.
+        const initialize = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             if (!mounted) return;
 
             if (session?.user) {
                 setUser(session.user);
-                // Background check (non-blocking if loading was already set to false)
                 await fetchRole(session.user.id);
             } else {
                 setUser(null);
@@ -71,7 +69,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
         };
 
-        getInitialSession();
+        initialize();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             if (!mounted) return;
@@ -83,17 +81,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 setRole(null);
                 localStorage.removeItem(STORAGE_KEY);
                 setLoading(false);
-            } else if (e === 'SIGNED_IN' || e === 'TOKEN_REFRESHED' || e === 'USER_UPDATED') {
+            } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
                 if (session?.user) {
                     setUser(session.user);
-                    // If the user changed or we don't have a role, block until we do
-                    if (session.user.id !== user?.id || !role) {
+                    // Ensure loading is set if role is unknown
+                    if (!role || session.user.id !== user?.id) {
                         setLoading(true);
-                        await fetchRole(session.user.id);
-                    } else {
-                        // Just a token refresh, refresh role in background
-                        fetchRole(session.user.id);
                     }
+                    await fetchRole(session.user.id);
                 }
             }
         });
@@ -102,9 +97,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             mounted = false;
             subscription.unsubscribe();
         };
-        // We only want this effect to run ONCE on mount.
-        // onAuthStateChange handles the rest.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        // Dependency array: stable fetchRole
     }, [fetchRole]);
 
     return (

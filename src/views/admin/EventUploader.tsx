@@ -1,12 +1,14 @@
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent, useCallback } from 'react';
 import { supabase } from '../../services/supabase.ts';
 import { useAuth } from '../../context/AuthContext.tsx';
-import { Upload, Calendar, Send, CheckCircle } from 'lucide-react';
+import { Upload, Calendar, Send, CheckCircle, RefreshCw, AlertCircle } from 'lucide-react';
 
 export const EventUploader = () => {
-    const { user } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const [subjects, setSubjects] = useState<any[]>([]);
     const [types, setTypes] = useState<any[]>([]);
+    const [fetching, setFetching] = useState(true);
+    const [fetchError, setFetchError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
 
@@ -19,20 +21,39 @@ export const EventUploader = () => {
         file: null as File | null
     });
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         if (!user) return;
 
-        const [subs, typs] = await Promise.all([
-            supabase.from('subjects').select('*'),
-            supabase.from('event_types').select('*')
-        ]);
-        if (subs.data) setSubjects(subs.data);
-        if (typs.data) setTypes(typs.data);
-    };
+        setFetching(true);
+        setFetchError(null);
+        try {
+            const [subs, typs] = await Promise.all([
+                supabase.from('subjects').select('*').order('name'),
+                supabase.from('event_types').select('*').order('name')
+            ]);
+
+            if (subs.error) throw subs.error;
+            if (typs.error) throw typs.error;
+
+            if (subs.data) setSubjects(subs.data);
+            if (typs.data) setTypes(typs.data);
+        } catch (err: any) {
+            console.error("Fetch options error:", err);
+            setFetchError(err.message || "Failed to load subjects or types.");
+        } finally {
+            setFetching(false);
+        }
+    }, [user]);
 
     useEffect(() => {
         fetchData();
-    }, [user]);
+    }, [fetchData]);
+
+    useEffect(() => {
+        if (!authLoading && !user) {
+            setFetching(false);
+        }
+    }, [authLoading, user]);
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
@@ -40,33 +61,36 @@ export const EventUploader = () => {
         setLoading(true);
         setSuccess(false);
 
-        let fileUrl = '';
-        if (formData.file) {
-            const fileName = `${Date.now()}_${formData.file.name}`;
-            const { data } = await supabase.storage
-                .from('event-attachments')
-                .upload(fileName, formData.file);
-
-            if (data) {
-                const { data: { publicUrl } } = supabase.storage
+        try {
+            let fileUrl = '';
+            if (formData.file) {
+                const fileName = `${Date.now()}_${formData.file.name}`;
+                const { data, error: uploadError } = await supabase.storage
                     .from('event-attachments')
-                    .getPublicUrl(fileName);
-                fileUrl = publicUrl;
+                    .upload(fileName, formData.file);
+
+                if (uploadError) throw uploadError;
+
+                if (data) {
+                    const { data: { publicUrl } } = supabase.storage
+                        .from('event-attachments')
+                        .getPublicUrl(fileName);
+                    fileUrl = publicUrl;
+                }
             }
-        }
 
-        const { error } = await supabase.from('events').insert([{
-            subject_id: formData.subject_id,
-            type_id: formData.type_id || null,
-            title: formData.title,
-            description: formData.description,
-            date: formData.date,
-            file_url: fileUrl,
-            is_global: true
-        }]);
+            const { error: insertError } = await supabase.from('events').insert([{
+                subject_id: formData.subject_id,
+                type_id: formData.type_id || null,
+                title: formData.title,
+                description: formData.description,
+                date: formData.date,
+                file_url: fileUrl,
+                is_global: true
+            }]);
 
-        setLoading(false);
-        if (!error) {
+            if (insertError) throw insertError;
+
             setSuccess(true);
             setFormData({
                 subject_id: '',
@@ -77,12 +101,23 @@ export const EventUploader = () => {
                 file: null
             });
             setTimeout(() => setSuccess(false), 3000);
+        } catch (err: any) {
+            alert("Error creating event: " + err.message);
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
         <div style={{ maxWidth: '600px' }}>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '2rem' }}>Upload Event</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: 600, margin: 0 }}>Upload Event</h2>
+                {fetchError && (
+                    <button onClick={fetchData} className="btn btn-ghost" style={{ color: '#ef4444' }}>
+                        <RefreshCw size={14} /> Retry
+                    </button>
+                )}
+            </div>
 
             {success && (
                 <div style={{ background: '#ecfdf5', color: '#059669', padding: '1rem', borderRadius: 'var(--radius)', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem', animation: 'fadeIn 0.3s ease' }}>
@@ -91,17 +126,25 @@ export const EventUploader = () => {
                 </div>
             )}
 
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            {fetchError && (
+                <div style={{ background: '#fef2f2', border: '1px solid #fee2e2', color: '#991b1b', padding: '1rem', borderRadius: 'var(--radius)', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <AlertCircle size={20} />
+                    {fetchError}
+                </div>
+            )}
+
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', opacity: fetching ? 0.6 : 1, pointerEvents: fetching ? 'none' : 'auto' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                     <div>
                         <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.5rem', color: 'var(--muted-foreground)' }}>Subject</label>
                         <select
                             value={formData.subject_id}
                             onChange={(e) => setFormData({ ...formData, subject_id: e.target.value })}
-                            style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--background)' }}
+                            style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--fg)' }}
                             required
+                            disabled={fetching}
                         >
-                            <option value="">Select Subject</option>
+                            <option value="">{fetching ? 'Syncing...' : 'Select Subject'}</option>
                             {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                         </select>
                     </div>
@@ -110,9 +153,10 @@ export const EventUploader = () => {
                         <select
                             value={formData.type_id}
                             onChange={(e) => setFormData({ ...formData, type_id: e.target.value })}
-                            style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--background)' }}
+                            style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--fg)' }}
+                            disabled={fetching}
                         >
-                            <option value="">None</option>
+                            <option value="">{fetching ? 'Syncing...' : 'None'}</option>
                             {types.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                         </select>
                     </div>
@@ -125,7 +169,7 @@ export const EventUploader = () => {
                         value={formData.title}
                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                         placeholder="e.g. Midterm Exam"
-                        style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--background)' }}
+                        style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--fg)' }}
                         required={!formData.description}
                     />
                 </div>
@@ -136,7 +180,7 @@ export const EventUploader = () => {
                         value={formData.description}
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                         placeholder="Add some details about the event..."
-                        style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--background)', minHeight: '100px', resize: 'vertical' }}
+                        style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--fg)', minHeight: '100px', resize: 'vertical' }}
                     />
                 </div>
 
@@ -149,22 +193,24 @@ export const EventUploader = () => {
                                 type="date"
                                 value={formData.date}
                                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                                style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--background)' }}
+                                style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--fg)' }}
                                 required
                             />
                         </div>
                     </div>
                     <div>
                         <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.5rem', color: 'var(--muted-foreground)' }}>Attachment</label>
-                        <label className="btn btn-ghost" style={{ width: '100%', height: '42px', border: '1px dashed var(--border)', cursor: 'pointer', display: 'flex', gap: '0.5rem' }}>
+                        <label className="btn btn-ghost" style={{ width: '100%', height: '42px', border: '1px dashed var(--border)', cursor: 'pointer', display: 'flex', gap: '0.5rem', alignItems: 'center', justifyContent: 'center' }}>
                             <Upload size={18} />
-                            {formData.file ? formData.file.name : 'Upload File'}
+                            <span style={{ maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {formData.file ? formData.file.name : 'Upload File'}
+                            </span>
                             <input type="file" style={{ display: 'none' }} onChange={(e) => setFormData({ ...formData, file: e.target.files?.[0] || null })} />
                         </label>
                     </div>
                 </div>
 
-                <button type="submit" className="btn btn-primary" style={{ padding: '1rem', marginTop: '1rem' }} disabled={loading}>
+                <button type="submit" className="btn btn-primary" style={{ padding: '1rem', marginTop: '1rem' }} disabled={loading || fetching}>
                     {loading ? 'Processing...' : 'Create Scheduled Event'}
                     <Send size={18} />
                 </button>
