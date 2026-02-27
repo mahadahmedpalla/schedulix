@@ -32,6 +32,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         // 2. Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+            // CRITICAL: set loading=true FIRST so downstream components (AdminDashboard)
+            // wait for the role to be fetched before making redirect decisions.
+            setLoading(true);
             setUser(session?.user ?? null);
             if (session?.user) {
                 await fetchRole(session.user.id);

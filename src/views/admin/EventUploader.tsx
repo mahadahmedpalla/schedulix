@@ -2,70 +2,11 @@ import { useState, useEffect, type FormEvent } from 'react';
 import { supabase } from '../../services/supabase.ts';
 import { Upload, Calendar, Send, CheckCircle } from 'lucide-react';
 
-// Inject toast keyframes once
-const toastStyles = document.createElement('style');
-toastStyles.textContent = `
-@keyframes toastSlideIn {
-    from { transform: translateX(120%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-}
-@keyframes toastFadeOut {
-    from { transform: translateX(0); opacity: 1; }
-    to { transform: translateX(120%); opacity: 0; }
-}
-`;
-if (!document.querySelector('[data-toast-styles]')) {
-    toastStyles.setAttribute('data-toast-styles', '');
-    document.head.appendChild(toastStyles);
-}
-
-const SuccessToast = ({ show, message }: { show: boolean; message: string }) => {
-    const [visible, setVisible] = useState(false);
-    const [leaving, setLeaving] = useState(false);
-
-    useEffect(() => {
-        if (show) {
-            setVisible(true);
-            setLeaving(false);
-            const timer = setTimeout(() => setLeaving(true), 2200);
-            const hide = setTimeout(() => setVisible(false), 2700);
-            return () => { clearTimeout(timer); clearTimeout(hide); };
-        }
-    }, [show]);
-
-    if (!visible) return null;
-
-    return (
-        <div
-            style={{
-                position: 'fixed',
-                top: '1.5rem',
-                right: '1.5rem',
-                zIndex: 9999,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.6rem',
-                background: '#18181b',
-                color: '#ffffff',
-                padding: '0.85rem 1.25rem',
-                borderRadius: '10px',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                boxShadow: '0 8px 30px rgba(0,0,0,0.18)',
-                animation: leaving ? 'toastFadeOut 0.5s ease forwards' : 'toastSlideIn 0.4s ease forwards',
-            }}
-        >
-            <CheckCircle size={18} color="#34d399" />
-            {message}
-        </div>
-    );
-};
-
 export const EventUploader = () => {
     const [subjects, setSubjects] = useState<any[]>([]);
     const [types, setTypes] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
-    const [toastKey, setToastKey] = useState(0);
+    const [success, setSuccess] = useState(false);
 
     const [formData, setFormData] = useState({
         subject_id: '',
@@ -93,6 +34,7 @@ export const EventUploader = () => {
         e.preventDefault();
         if (!formData.subject_id || !formData.date) return;
         setLoading(true);
+        setSuccess(false);
 
         let fileUrl = '';
         if (formData.file) {
@@ -121,7 +63,7 @@ export const EventUploader = () => {
 
         setLoading(false);
         if (!error) {
-            setToastKey(prev => prev + 1);
+            setSuccess(true);
             setFormData({
                 subject_id: '',
                 type_id: '',
@@ -130,12 +72,20 @@ export const EventUploader = () => {
                 date: new Date().toISOString().split('T')[0],
                 file: null
             });
+            setTimeout(() => setSuccess(false), 3000);
         }
     };
 
     return (
         <div style={{ maxWidth: '600px' }}>
-            <SuccessToast key={toastKey} show={toastKey > 0} message="Event created successfully!" />
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '2rem' }}>Upload Event</h2>
+
+            {success && (
+                <div style={{ background: '#ecfdf5', color: '#059669', padding: '1rem', borderRadius: 'var(--radius)', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem', animation: 'fadeIn 0.3s ease' }}>
+                    <CheckCircle size={20} />
+                    Event created successfully and added to calendar!
+                </div>
+            )}
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
