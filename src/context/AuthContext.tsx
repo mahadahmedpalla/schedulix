@@ -89,6 +89,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 setLoading(false);
             } else if (e === 'SIGNED_IN' || e === 'TOKEN_REFRESHED' || e === 'USER_UPDATED') {
                 if (session?.user) {
+                    // CRITICAL: Set loading=true IMMEDIATELY so components wait for the role
+                    setLoading(true);
                     setUser(session.user);
                     // Fetch role and update storage
                     await fetchRole(session.user.id);

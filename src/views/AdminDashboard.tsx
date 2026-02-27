@@ -22,22 +22,24 @@ export const AdminDashboard = () => {
     useEffect(() => {
         if (!loading) {
             if (!user) {
+                // Not logged in at all
                 navigate("/sec/admin/login");
-            } else if (role !== "admin") {
-                // User is logged in but not an admin. Sign them out and send back to admin login.
+            } else if (role !== null && role !== "admin") {
+                // Logged in, we have a role, and it's NOT admin.
+                // WE ONLY REDIRECT IF ROLE IS EXPLICITLY NOT ADMIN.
+                // If role is null, we are still waiting for fetchRole.
                 supabase.auth.signOut().then(() => navigate("/sec/admin/login"));
             }
         }
     }, [user, role, loading, navigate]);
 
     // PREVENT BLANK SCREEN & LOOPS: 
-    // We show nothing while strictly loading ONLY if we don't have a role yet.
-    // This allows Instant Auth (localStorage role) to show the dashboard immediately.
+    // We show a very light loader or empty surface while loading
     if (loading && !role) {
         return <div style={{ minHeight: '100vh', background: 'var(--bg)' }} />;
     }
 
-    // Protection for when loading is finished or role is determined to be non-admin
+    // Still protect against illegal rendering if auth finally resolves to non-admin
     if (!user || role !== "admin") return null;
 
     const handleLogout = async () => {

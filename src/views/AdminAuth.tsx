@@ -50,7 +50,8 @@ export const AdminAuth = ({ mode }: { mode: "login" | "signup" }) => {
                 setError("Invalid Registration Key. Please check the key and try again.");
                 setLoading(false);
             } else {
-                // Use client-side navigation so the in-memory session stays alive
+                // Success: AuthProvider will pick up the change and navigate will trigger
+                setLoading(false);
                 navigate("/admin");
             }
         } else {
@@ -60,7 +61,8 @@ export const AdminAuth = ({ mode }: { mode: "login" | "signup" }) => {
                 setError(loginError.message);
                 setLoading(false);
             } else {
-                // Use client-side navigation — NOT window.location.href — to avoid losing the session
+                // Success
+                setLoading(false);
                 navigate("/admin");
             }
         }
