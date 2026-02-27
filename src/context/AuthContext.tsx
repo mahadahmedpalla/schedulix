@@ -17,13 +17,14 @@ const AuthContext = createContext<AuthState>({
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
+    // 1. Initial State from localStorage for "Instant Feel"
     const [user, setUser] = useState<User | null>(null);
     const [role, setRole] = useState<"admin" | "student" | null>(() => {
         return localStorage.getItem(STORAGE_KEY) as "admin" | "student" | null;
     });
-    // We only start with loading: false if we ALREADY have a role AND a session is likely to be there.
-    // To be safe, we'll keep loading as true initially on fresh mount unless we have role.
-    const [loading, setLoading] = useState(true);
+
+    // If we have a role in storage, we don't need a blocking loader!
+    const [loading, setLoading] = useState(!localStorage.getItem(STORAGE_KEY));
 
     const fetchRole = useCallback(async (userId: string) => {
         try {
@@ -53,28 +54,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     useEffect(() => {
         let mounted = true;
 
-        const initializeAuth = async () => {
-            try {
-                const { data: { session } } = await supabase.auth.getSession();
+        // Fetch session on mount
+        const getInitialSession = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!mounted) return;
 
-                if (!mounted) return;
-
-                if (session?.user) {
-                    setUser(session.user);
-                    await fetchRole(session.user.id);
-                } else {
-                    setUser(null);
-                    setRole(null);
-                    localStorage.removeItem(STORAGE_KEY);
-                    setLoading(false);
-                }
-            } catch (err) {
-                console.error("Initialization error:", err);
-                if (mounted) setLoading(false);
+            if (session?.user) {
+                setUser(session.user);
+                // Background check (non-blocking if loading was already set to false)
+                await fetchRole(session.user.id);
+            } else {
+                setUser(null);
+                setRole(null);
+                localStorage.removeItem(STORAGE_KEY);
+                setLoading(false);
             }
         };
 
-        initializeAuth();
+        getInitialSession();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             if (!mounted) return;
@@ -88,15 +85,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 setLoading(false);
             } else if (e === 'SIGNED_IN' || e === 'TOKEN_REFRESHED' || e === 'USER_UPDATED') {
                 if (session?.user) {
-                    // Start loading ONLY if we are actually fetching a new role
-                    // or if the role is currently missing
-                    const isNewUser = session.user.id !== user?.id;
-                    if (isNewUser || !role) {
+                    setUser(session.user);
+                    // If the user changed or we don't have a role, block until we do
+                    if (session.user.id !== user?.id || !role) {
                         setLoading(true);
-                        setUser(session.user);
                         await fetchRole(session.user.id);
                     } else {
-                        setUser(session.user);
+                        // Just a token refresh, refresh role in background
+                        fetchRole(session.user.id);
                     }
                 }
             }
@@ -106,7 +102,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             mounted = false;
             subscription.unsubscribe();
         };
-    }, [fetchRole, user?.id, role]);
+        // We only want this effect to run ONCE on mount.
+        // onAuthStateChange handles the rest.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [fetchRole]);
 
     return (
         <AuthContext.Provider value={{ user, role, loading }}>
