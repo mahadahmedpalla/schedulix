@@ -13,6 +13,8 @@ interface CalendarEvent {
 interface CalendarProps {
     events: CalendarEvent[];
     onDateClick: (date: Date) => void;
+    selectedSubjectIds?: string[];
+    allSubjects?: { id: string; color: string }[];
 }
 
 const MONTH_NAMES = [
@@ -21,7 +23,7 @@ const MONTH_NAMES = [
 ];
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-export const Calendar: FC<CalendarProps> = ({ events, onDateClick }) => {
+export const Calendar: FC<CalendarProps> = ({ events, onDateClick, selectedSubjectIds, allSubjects }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
 
     const year = currentDate.getFullYear();
@@ -57,11 +59,27 @@ export const Calendar: FC<CalendarProps> = ({ events, onDateClick }) => {
         const allPersonalCompleted = personalEvents.length > 0 && personalEvents.every(e => e.is_completed);
         const allEventsCompleted = dayEvents.length > 0 && dayEvents.every(e => e.is_completed);
 
+        // -- Calculation for Highlight Background --
+        let backgroundColor = "transparent";
+        if (hasEvents) {
+            if (!selectedSubjectIds || selectedSubjectIds.length === 0) {
+                // "ALL" Filter -> Teal Highlight (approx 0.15 opacity for teal #14b8a6)
+                backgroundColor = "rgba(20, 184, 166, 0.15)";
+            } else if (selectedSubjectIds.length === 1) {
+                // Single Subject Filter -> Subject Color Highlight (40% opacity)
+                const activeSubjectId = selectedSubjectIds[0];
+                const matchingSubject = allSubjects?.find(s => s.id === activeSubjectId);
+                const baseColor = matchingSubject?.color ?? (activeSubjectId === 'personal' ? "#000000" : "transparent");
+                backgroundColor = `${baseColor}40`;
+            }
+        }
+
         cells.push(
             <div
                 key={d}
                 className={`calendar-day${hasEvents ? " has-events" : ""}${isToday ? " today" : ""}${allEventsCompleted ? " day-completed" : ""}`}
                 onClick={() => onDateClick(date)}
+                style={{ backgroundColor }}
                 title={hasEvents ? `${dayEvents.length} event${dayEvents.length > 1 ? "s" : ""}` : undefined}
             >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>

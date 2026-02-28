@@ -97,7 +97,12 @@ export const CalendarView = () => {
                         </p>
                     </div>
                 ) : (
-                    <Calendar events={filteredEvents} onDateClick={setSelectedDate} />
+                    <Calendar
+                        events={filteredEvents}
+                        onDateClick={setSelectedDate}
+                        selectedSubjectIds={selectedSubjects}
+                        allSubjects={subjects}
+                    />
                 )}
             </div>
 
