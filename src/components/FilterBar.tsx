@@ -15,11 +15,10 @@ interface FilterBarProps {
 
 export const FilterBar: FC<FilterBarProps> = ({ subjects, selectedSubjects, onChange }) => {
     const toggle = (id: string) => {
-        onChange(
-            selectedSubjects.includes(id)
-                ? selectedSubjects.filter(s => s !== id)
-                : [...selectedSubjects, id]
-        );
+        // Only allow one subject selection at a time.
+        // If the subject is already selected, clear it (toggle off).
+        // If a different subject is selected, replace the previous one.
+        onChange(selectedSubjects.includes(id) ? [] : [id]);
     };
 
     const isAll = selectedSubjects.length === 0;
