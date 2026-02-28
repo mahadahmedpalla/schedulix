@@ -20,6 +20,7 @@ export interface CalendarEvent {
     description: string;
     file_url: string;
     date: string;
+    is_global: boolean;
     subjects?: Subject;
     event_types?: EventType;
 }

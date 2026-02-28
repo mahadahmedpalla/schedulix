@@ -5,6 +5,7 @@ import "./Calendar.css";
 interface CalendarEvent {
     id: string;
     date: string;
+    is_global?: boolean;
     subjects?: { color: string };
 }
 
@@ -58,7 +59,12 @@ export const Calendar: FC<CalendarProps> = ({ events, onDateClick }) => {
                 onClick={() => onDateClick(date)}
                 title={hasEvents ? `${dayEvents.length} event${dayEvents.length > 1 ? "s" : ""}` : undefined}
             >
-                <span className="day-number">{d}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
+                    <span className="day-number">{d}</span>
+                    {dayEvents.some(e => e.is_global === false) && (
+                        <span className="custom-badge">custom</span>
+                    )}
+                </div>
 
                 {hasEvents && (
                     <div className="event-indicators">
