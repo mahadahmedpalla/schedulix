@@ -18,11 +18,12 @@ const AuthContext = createContext<AuthState>({
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
-    const [role, setRole] = useState<"admin" | "student" | null>(null);
+    const [role, setRole] = useState<"admin" | "student" | null>(() => {
+        return localStorage.getItem(STORAGE_KEY) as "admin" | "student" | null;
+    });
 
-    // Reliability-First: ALWAYS start with loading: true on fresh mount/reload
-    // We only use the storage as a hint for the UI, but we don't let it bypass the loader.
-    const [loading, setLoading] = useState(true);
+    // We only start with loading: false if we have a cached role.
+    const [loading, setLoading] = useState(!localStorage.getItem(STORAGE_KEY));
 
     const fetchRole = useCallback(async (userId: string) => {
         try {
@@ -35,7 +36,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             if (error && error.code !== "PGRST116") {
                 console.error("Error fetching role:", error);
             }
-
             const userRole = data?.role ?? "student";
             setRole(userRole as "admin" | "student");
             localStorage.setItem(STORAGE_KEY, userRole);
@@ -43,6 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         } catch (err) {
             console.error("Auth Exception:", err);
             setRole("student");
+            localStorage.setItem(STORAGE_KEY, "student");
             return "student";
         } finally {
             setLoading(false);
@@ -52,28 +53,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     useEffect(() => {
         let mounted = true;
 
-        const initializeAuth = async () => {
-            setLoading(true);
-            try {
-                const { data: { session } } = await supabase.auth.getSession();
-                if (!mounted) return;
+        // Consolidate: Fetch session and then listen for changes.
+        const initialize = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!mounted) return;
 
-                if (session?.user) {
-                    setUser(session.user);
-                    await fetchRole(session.user.id);
-                } else {
-                    setUser(null);
-                    setRole(null);
-                    localStorage.removeItem(STORAGE_KEY);
-                    setLoading(false);
-                }
-            } catch (err) {
-                console.error("Init Error:", err);
-                if (mounted) setLoading(false);
+            if (session?.user) {
+                setUser(session.user);
+                await fetchRole(session.user.id);
+            } else {
+                setUser(null);
+                setRole(null);
+                localStorage.removeItem(STORAGE_KEY);
+                setLoading(false);
             }
         };
 
-        initializeAuth();
+        initialize();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             if (!mounted) return;
@@ -85,11 +81,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 setRole(null);
                 localStorage.removeItem(STORAGE_KEY);
                 setLoading(false);
-            } else if (e === 'SIGNED_IN' || e === 'TOKEN_REFRESHED' || e === 'USER_UPDATED') {
+            } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
                 if (session?.user) {
                     setUser(session.user);
-                    // If we're already verified, just update the user.
-                    // If not, fetch the role and clear loading.
+                    // Ensure loading is set if role is unknown
+                    if (!role || session.user.id !== user?.id) {
+                        setLoading(true);
+                    }
                     await fetchRole(session.user.id);
                 }
             }
@@ -99,6 +97,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             mounted = false;
             subscription.unsubscribe();
         };
+        // Dependency array: stable fetchRole
     }, [fetchRole]);
 
     return (
