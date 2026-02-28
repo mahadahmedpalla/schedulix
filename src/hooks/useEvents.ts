@@ -47,27 +47,45 @@ export const useEvents = (startDate: string, endDate: string) => {
         const personalEventsPromise = user
             ? supabase
                 .from('personal_events')
-                .select('*, subjects(*)')
+                .select('*, subjects(*)').order('date')
                 .gte('date', startDate)
                 .lte('date', endDate)
             : Promise.resolve({ data: [] as any[], error: null });
 
-        const [globalRes, personalRes, subjectsRes] = await Promise.all([
+        // 3. Fetch Global Completions (only if user is logged in)
+        const globalCompletionsPromise = user
+            ? supabase
+                .from('global_event_completions')
+                .select('event_id')
+                .eq('user_id', user.id)
+            : Promise.resolve({ data: [] as any[], error: null });
+
+        const [globalRes, personalRes, completionsRes, subjectsRes] = await Promise.all([
             globalEventsPromise,
             personalEventsPromise,
+            globalCompletionsPromise,
             supabase.from('subjects').select('*')
         ]);
 
         let allEvents: any[] = [];
+        const completedGlobalIds = new Set((completionsRes.data || []).map((c: any) => c.event_id));
 
         // Aggregate and tag
         if (globalRes.data) {
-            allEvents = [...allEvents, ...globalRes.data];
+            const taggedGlobal = globalRes.data.map((e: any) => ({
+                ...e,
+                is_global: true,
+                is_completed: completedGlobalIds.has(e.id)
+            }));
+            allEvents = [...allEvents, ...taggedGlobal];
         }
 
         if (personalRes.data) {
             // Tag personal events as is_global: false for UI compatibility
-            const taggedPersonal = personalRes.data.map(e => ({ ...e, is_global: false }));
+            const taggedPersonal = personalRes.data.map((e: any) => ({
+                ...e,
+                is_global: false
+            }));
             allEvents = [...allEvents, ...taggedPersonal];
         }
 

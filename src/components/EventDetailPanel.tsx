@@ -1,5 +1,7 @@
-import { useMemo, type FC } from "react";
-import { X, FileText, Tag, CalendarX, User } from "lucide-react";
+import { useMemo, useState, type FC } from "react";
+import { X, FileText, Tag, CalendarX, User, CheckCircle, Circle } from "lucide-react";
+import { supabase } from "../services/supabase";
+import { useAuth } from "../context/AuthContext";
 import "./EventDetailPanel.css";
 
 interface EventDetailPanelProps {
@@ -10,14 +12,53 @@ interface EventDetailPanelProps {
         description?: string;
         file_url?: string;
         is_global: boolean;
+        is_completed?: boolean;
         subjects?: { name: string; color: string };
         event_types?: { name: string };
     }[];
     onClose: () => void;
+    onRefresh?: () => void;
 }
 
-export const EventDetailPanel: FC<EventDetailPanelProps> = ({ date, events, onClose }) => {
+export const EventDetailPanel: FC<EventDetailPanelProps> = ({ date, events, onClose, onRefresh }) => {
+    const { user } = useAuth();
+    const [toggling, setToggling] = useState<string | null>(null);
+
     if (!date) return null;
+
+    const toggleCompletion = async (event: any) => {
+        if (!user || toggling) return;
+        setToggling(event.id);
+
+        try {
+            if (event.is_global) {
+                if (event.is_completed) {
+                    // Remove completion
+                    await supabase
+                        .from('global_event_completions')
+                        .delete()
+                        .eq('user_id', user.id)
+                        .eq('event_id', event.id);
+                } else {
+                    // Add completion
+                    await supabase
+                        .from('global_event_completions')
+                        .insert([{ user_id: user.id, event_id: event.id }]);
+                }
+            } else {
+                // Personal event toggle
+                await supabase
+                    .from('personal_events')
+                    .update({ is_completed: !event.is_completed })
+                    .eq('id', event.id);
+            }
+            if (onRefresh) onRefresh();
+        } catch (err) {
+            console.error("Error toggling completion:", err);
+        } finally {
+            setToggling(null);
+        }
+    };
 
     const formatDate = (d: Date) =>
         d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
@@ -74,31 +115,49 @@ export const EventDetailPanel: FC<EventDetailPanelProps> = ({ date, events, onCl
                             {sortedEvents.map((event, index) => (
                                 <div key={event.id || index}>
                                     <div
-                                        className="event-card"
+                                        className={`event-card${event.is_completed ? ' completed' : ''}`}
                                         style={{ borderLeftColor: event.subjects?.color ?? (event.is_global ? "var(--primary)" : "#000000") }}
                                     >
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-                                            {/* Subject tag */}
-                                            {event.subjects && (
-                                                <div
-                                                    className="event-tag"
-                                                    style={{
-                                                        color: event.subjects.color,
-                                                        backgroundColor: `${event.subjects.color}18`,
-                                                        margin: 0
-                                                    }}
-                                                >
-                                                    <Tag size={10} />
-                                                    {event.subjects.name}
-                                                </div>
-                                            )}
+                                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                                {/* Subject tag */}
+                                                {event.subjects && (
+                                                    <div
+                                                        className="event-tag"
+                                                        style={{
+                                                            color: event.subjects.color,
+                                                            backgroundColor: `${event.subjects.color}18`,
+                                                            margin: 0
+                                                        }}
+                                                    >
+                                                        <Tag size={10} />
+                                                        {event.subjects.name}
+                                                    </div>
+                                                )}
 
-                                            {/* Custom Badge */}
-                                            {!event.is_global && (
-                                                <div className="custom-badge" style={{ fontSize: '0.55rem', padding: '1px 6px' }}>
-                                                    <User size={8} style={{ marginRight: '2px' }} />
-                                                    Personal
-                                                </div>
+                                                {/* Custom Badge */}
+                                                {!event.is_global && (
+                                                    <div className="custom-badge" style={{ fontSize: '0.55rem', padding: '1px 6px' }}>
+                                                        <User size={8} style={{ marginRight: '2px' }} />
+                                                        Personal
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Completion Checkbox */}
+                                            {user && (
+                                                <button
+                                                    className={`completion-toggle${event.is_completed ? ' checked' : ''}`}
+                                                    onClick={() => toggleCompletion(event)}
+                                                    disabled={toggling === event.id}
+                                                    title={event.is_completed ? "Mark as incomplete" : "Mark as completed"}
+                                                >
+                                                    {event.is_completed ? (
+                                                        <CheckCircle size={18} fill="currentColor" color="#ffffff" />
+                                                    ) : (
+                                                        <Circle size={18} />
+                                                    )}
+                                                </button>
                                             )}
                                         </div>
 

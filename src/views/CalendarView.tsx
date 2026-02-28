@@ -106,6 +106,7 @@ export const CalendarView = () => {
                 date={selectedDate}
                 events={selectedDateEvents}
                 onClose={() => setSelectedDate(null)}
+                onRefresh={refetchEvents}
             />
 
             {/* ── Add Event Modal ── */}

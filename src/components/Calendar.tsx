@@ -1,11 +1,12 @@
 import { useState, type FC } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, CheckCircle2, CheckCircle } from "lucide-react";
 import "./Calendar.css";
 
 interface CalendarEvent {
     id: string;
     date: string;
     is_global?: boolean;
+    is_completed?: boolean;
     subjects?: { color: string };
 }
 
@@ -49,21 +50,33 @@ export const Calendar: FC<CalendarProps> = ({ events, onDateClick }) => {
         const date = new Date(year, month, d);
         const dateStr = date.toISOString().split("T")[0];
         const dayEvents = events.filter(e => e.date === dateStr);
+        const personalEvents = dayEvents.filter(e => e.is_global === false);
         const isToday = date.getTime() === today.getTime();
         const hasEvents = dayEvents.length > 0;
+
+        const allPersonalCompleted = personalEvents.length > 0 && personalEvents.every(e => e.is_completed);
+        const allEventsCompleted = dayEvents.length > 0 && dayEvents.every(e => e.is_completed);
 
         cells.push(
             <div
                 key={d}
-                className={`calendar-day${hasEvents ? " has-events" : ""}${isToday ? " today" : ""}`}
+                className={`calendar-day${hasEvents ? " has-events" : ""}${isToday ? " today" : ""}${allEventsCompleted ? " day-completed" : ""}`}
                 onClick={() => onDateClick(date)}
                 title={hasEvents ? `${dayEvents.length} event${dayEvents.length > 1 ? "s" : ""}` : undefined}
             >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
                     <span className="day-number">{d}</span>
-                    {dayEvents.some(e => e.is_global === false) && (
-                        <span className="custom-badge">custom</span>
-                    )}
+                    <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                        {personalEvents.length > 0 && (
+                            <span className={`custom-badge${allPersonalCompleted ? ' personal-done' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                                {allPersonalCompleted && <CheckCircle size={8} />}
+                                custom
+                            </span>
+                        )}
+                        {allEventsCompleted && (
+                            <CheckCircle2 size={14} className="completion-check-icon" />
+                        )}
+                    </div>
                 </div>
 
                 {hasEvents && (

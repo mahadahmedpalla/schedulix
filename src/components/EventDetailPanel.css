@@ -141,6 +141,49 @@
     box-shadow: var(--shadow);
 }
 
+.event-card.completed {
+    opacity: 0.7;
+    background: var(--bg-bg);
+}
+
+.event-card.completed h4 {
+    text-decoration: line-through;
+    color: var(--fg-muted);
+}
+
+.event-card.completed .event-desc {
+    color: var(--fg-subtle);
+}
+
+.completion-toggle {
+    background: transparent;
+    border: none;
+    padding: 2px;
+    cursor: pointer;
+    color: var(--border-strong);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    border-radius: 50%;
+}
+
+.completion-toggle:hover {
+    background: var(--bg-raised);
+    color: var(--fg);
+    transform: scale(1.1);
+}
+
+.completion-toggle.checked {
+    color: #10b981;
+    /* Green */
+}
+
+.completion-toggle:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 /* ── Panel Divider ───────────────────────────────────────────────────── */
 .panel-divider {
     display: flex;
