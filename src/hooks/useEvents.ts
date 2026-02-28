@@ -33,16 +33,45 @@ export const useEvents = (startDate: string, endDate: string) => {
     const fetchEvents = async () => {
         setLoading(true);
 
-        const [eventsRes, subjectsRes] = await Promise.all([
-            supabase
-                .from('events')
-                .select('*, subjects(*), event_types(*)')
+        const { data: { user } } = await supabase.auth.getUser();
+
+        // 1. Fetch Global Events
+        const globalEventsPromise = supabase
+            .from('events')
+            .select('*, subjects(*), event_types(*)')
+            .eq('is_global', true)
+            .gte('date', startDate)
+            .lte('date', endDate);
+
+        // 2. Fetch Personal Events (only if user is logged in)
+        const personalEventsPromise = user
+            ? supabase
+                .from('personal_events')
+                .select('*, subjects(*)')
                 .gte('date', startDate)
-                .lte('date', endDate),
+                .lte('date', endDate)
+            : Promise.resolve({ data: [] as any[], error: null });
+
+        const [globalRes, personalRes, subjectsRes] = await Promise.all([
+            globalEventsPromise,
+            personalEventsPromise,
             supabase.from('subjects').select('*')
         ]);
 
-        if (eventsRes.data) setEvents(eventsRes.data);
+        let allEvents: any[] = [];
+
+        // Aggregate and tag
+        if (globalRes.data) {
+            allEvents = [...allEvents, ...globalRes.data];
+        }
+
+        if (personalRes.data) {
+            // Tag personal events as is_global: false for UI compatibility
+            const taggedPersonal = personalRes.data.map(e => ({ ...e, is_global: false }));
+            allEvents = [...allEvents, ...taggedPersonal];
+        }
+
+        setEvents(allEvents);
         if (subjectsRes.data) setSubjects(subjectsRes.data);
         setLoading(false);
     };

@@ -36,15 +36,14 @@ export const AddPersonalEventModal = ({ onClose, onSuccess, subjects }: AddPerso
         setLoading(true);
         setError(null);
 
-        // Private event -> is_global = false
-        const { error: insertError } = await supabase.from("events").insert([
+        // Insert into the dedicated personal_events table
+        const { error: insertError } = await supabase.from("personal_events").insert([
             {
                 title,
                 date,
                 subject_id: subjectId === "personal" ? null : subjectId,
                 description,
-                created_by: user.id,
-                is_global: false,
+                user_id: user.id
             }
         ]);
 
