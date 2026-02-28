@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext.tsx';
 import { Upload, Calendar, Send, CheckCircle, RefreshCw, AlertCircle } from 'lucide-react';
 
 export const EventUploader = () => {
-    const { user, loading: authLoading } = useAuth();
+    const { user, role, loading: authLoading } = useAuth();
     const [subjects, setSubjects] = useState<any[]>([]);
     const [types, setTypes] = useState<any[]>([]);
     const [fetching, setFetching] = useState(true);
@@ -22,7 +22,9 @@ export const EventUploader = () => {
     });
 
     const fetchData = useCallback(async () => {
-        if (!user) return;
+        if (authLoading || !user || role !== 'admin') {
+            return;
+        }
 
         setFetching(true);
         setFetchError(null);
@@ -43,7 +45,7 @@ export const EventUploader = () => {
         } finally {
             setFetching(false);
         }
-    }, [user]);
+    }, [user, role, authLoading]);
 
     useEffect(() => {
         fetchData();
@@ -57,7 +59,7 @@ export const EventUploader = () => {
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        if (!formData.subject_id || !formData.date) return;
+        if (!formData.subject_id || !formData.date || loading) return;
         setLoading(true);
         setSuccess(false);
 
@@ -114,7 +116,7 @@ export const EventUploader = () => {
                 <h2 style={{ fontSize: '1.5rem', fontWeight: 600, margin: 0 }}>Upload Event</h2>
                 {fetchError && (
                     <button onClick={fetchData} className="btn btn-ghost" style={{ color: '#ef4444' }}>
-                        <RefreshCw size={14} /> Retry
+                        <RefreshCw size={14} /> Retry Sync
                     </button>
                 )}
             </div>
@@ -122,18 +124,18 @@ export const EventUploader = () => {
             {success && (
                 <div style={{ background: '#ecfdf5', color: '#059669', padding: '1rem', borderRadius: 'var(--radius)', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem', animation: 'fadeIn 0.3s ease' }}>
                     <CheckCircle size={20} />
-                    Event created successfully and added to calendar!
+                    Event created successfully!
                 </div>
             )}
 
             {fetchError && (
                 <div style={{ background: '#fef2f2', border: '1px solid #fee2e2', color: '#991b1b', padding: '1rem', borderRadius: 'var(--radius)', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <AlertCircle size={20} />
-                    {fetchError}
+                    <div style={{ flex: 1 }}>{fetchError}</div>
                 </div>
             )}
 
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', opacity: fetching ? 0.6 : 1, pointerEvents: fetching ? 'none' : 'auto' }}>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', opacity: (fetching || authLoading) ? 0.6 : 1, pointerEvents: (fetching || authLoading) ? 'none' : 'auto' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                     <div>
                         <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.5rem', color: 'var(--muted-foreground)' }}>Subject</label>
@@ -142,9 +144,9 @@ export const EventUploader = () => {
                             onChange={(e) => setFormData({ ...formData, subject_id: e.target.value })}
                             style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--fg)' }}
                             required
-                            disabled={fetching}
+                            disabled={fetching || authLoading}
                         >
-                            <option value="">{fetching ? 'Syncing...' : 'Select Subject'}</option>
+                            <option value="">{authLoading ? 'Verifying Session...' : fetching ? 'Syncing...' : 'Select Subject'}</option>
                             {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                         </select>
                     </div>
@@ -154,9 +156,9 @@ export const EventUploader = () => {
                             value={formData.type_id}
                             onChange={(e) => setFormData({ ...formData, type_id: e.target.value })}
                             style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--fg)' }}
-                            disabled={fetching}
+                            disabled={fetching || authLoading}
                         >
-                            <option value="">{fetching ? 'Syncing...' : 'None'}</option>
+                            <option value="">{authLoading ? 'Verifying Session...' : fetching ? 'Syncing...' : 'None'}</option>
                             {types.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                         </select>
                     </div>
@@ -171,6 +173,7 @@ export const EventUploader = () => {
                         placeholder="e.g. Midterm Exam"
                         style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--fg)' }}
                         required={!formData.description}
+                        disabled={authLoading}
                     />
                 </div>
 
@@ -181,6 +184,7 @@ export const EventUploader = () => {
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                         placeholder="Add some details about the event..."
                         style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--fg)', minHeight: '100px', resize: 'vertical' }}
+                        disabled={authLoading}
                     />
                 </div>
 
@@ -195,23 +199,24 @@ export const EventUploader = () => {
                                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                                 style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--fg)' }}
                                 required
+                                disabled={authLoading}
                             />
                         </div>
                     </div>
                     <div>
                         <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.5rem', color: 'var(--muted-foreground)' }}>Attachment</label>
-                        <label className="btn btn-ghost" style={{ width: '100%', height: '42px', border: '1px dashed var(--border)', cursor: 'pointer', display: 'flex', gap: '0.5rem', alignItems: 'center', justifyContent: 'center' }}>
+                        <label className="btn btn-ghost" style={{ width: '100%', height: '42px', border: '1px dashed var(--border)', cursor: 'pointer', display: 'flex', gap: '0.5rem', alignItems: 'center', justifyContent: 'center', opacity: authLoading ? 0.5 : 1 }}>
                             <Upload size={18} />
                             <span style={{ maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                 {formData.file ? formData.file.name : 'Upload File'}
                             </span>
-                            <input type="file" style={{ display: 'none' }} onChange={(e) => setFormData({ ...formData, file: e.target.files?.[0] || null })} />
+                            <input type="file" style={{ display: 'none' }} onChange={(e) => setFormData({ ...formData, file: e.target.files?.[0] || null })} disabled={authLoading} />
                         </label>
                     </div>
                 </div>
 
-                <button type="submit" className="btn btn-primary" style={{ padding: '1rem', marginTop: '1rem' }} disabled={loading || fetching}>
-                    {loading ? 'Processing...' : 'Create Scheduled Event'}
+                <button type="submit" className="btn btn-primary" style={{ padding: '1rem', marginTop: '1rem' }} disabled={loading || fetching || authLoading}>
+                    {authLoading ? 'Verifying...' : loading ? 'Processing...' : 'Create Scheduled Event'}
                     <Send size={18} />
                 </button>
             </form>

@@ -1,7 +1,7 @@
 import { useState, useEffect, type FormEvent, useCallback } from 'react';
 import { supabase } from '../../services/supabase.ts';
 import { useAuth } from '../../context/AuthContext.tsx';
-import { Plus, Trash2, Edit2, Check, X, RefreshCw } from 'lucide-react';
+import { Plus, Trash2, Edit2, Check, X, RefreshCw, AlertCircle } from 'lucide-react';
 
 interface Subject {
     id: string;
@@ -10,7 +10,7 @@ interface Subject {
 }
 
 export const SubjectManager = () => {
-    const { user, loading: authLoading } = useAuth();
+    const { user, role, loading: authLoading } = useAuth();
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -19,8 +19,10 @@ export const SubjectManager = () => {
     const [editingId, setEditingId] = useState<string | null>(null);
 
     const fetchSubjects = useCallback(async () => {
-        // We wait for the user to be available to avoid RLS 401/403 errors
-        if (!user) return;
+        // DO NOT fetch until we are 100% sure we have a valid admin session.
+        if (authLoading || !user || role !== 'admin') {
+            return;
+        }
 
         setLoading(true);
         setError(null);
@@ -35,26 +37,26 @@ export const SubjectManager = () => {
         } catch (err: any) {
             console.error("Fetch subjects error:", err);
             setError(err.message || "Failed to load subjects.");
+            // If we got a 401/403, it means our session is actually invalid.
         } finally {
             setLoading(false);
         }
-    }, [user]);
+    }, [user, role, authLoading]);
 
     useEffect(() => {
         fetchSubjects();
     }, [fetchSubjects]);
 
-    // Handle initial loading hang: if auth finished but user is still null, 
-    // we stop local "Loading..." to avoid eternal spinner.
+    // Handle initial loading states
     useEffect(() => {
         if (!authLoading && !user) {
-            setLoading(false);
+            setLoading(false); // Stop spinning if we are definitely logged out.
         }
     }, [authLoading, user]);
 
     const handleAdd = async (e: FormEvent) => {
         e.preventDefault();
-        if (!newName) return;
+        if (!newName || loading) return;
 
         const { data, error: insertError } = await supabase
             .from('subjects')
@@ -113,6 +115,7 @@ export const SubjectManager = () => {
                     className="btn btn-ghost"
                     title="Refresh list"
                     style={{ padding: '0.4rem' }}
+                    disabled={loading || authLoading}
                 >
                     <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
                 </button>
@@ -126,8 +129,8 @@ export const SubjectManager = () => {
                         value={editingId ? '' : newName}
                         onChange={(e) => !editingId && setNewName(e.target.value)}
                         placeholder="e.g. Mathematics"
-                        style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--background)' }}
-                        disabled={!!editingId}
+                        style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--fg)' }}
+                        disabled={!!editingId || authLoading}
                     />
                 </div>
                 <div>
@@ -137,10 +140,10 @@ export const SubjectManager = () => {
                         value={editingId ? '#0d9488' : newColor}
                         onChange={(e) => !editingId && setNewColor(e.target.value)}
                         style={{ width: '60px', height: '42px', padding: '2px', borderRadius: '0.5rem', border: '1px solid var(--border)', cursor: 'pointer' }}
-                        disabled={!!editingId}
+                        disabled={!!editingId || authLoading}
                     />
                 </div>
-                <button type="submit" className="btn btn-primary" style={{ alignSelf: 'flex-end', height: '42px' }} disabled={!!editingId || loading}>
+                <button type="submit" className="btn btn-primary" style={{ alignSelf: 'flex-end', height: '42px' }} disabled={!!editingId || loading || authLoading}>
                     <Plus size={18} />
                     Add Subject
                 </button>
@@ -148,19 +151,20 @@ export const SubjectManager = () => {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {error && (
-                    <div style={{ padding: '1rem', background: '#fef2f2', border: '1px solid #fee2e2', color: '#991b1b', borderRadius: 'var(--radius)', fontSize: '0.875rem' }}>
-                        {error}
-                        <button onClick={fetchSubjects} style={{ marginLeft: '1rem', textDecoration: 'underline', color: 'inherit', fontWeight: 600 }}>Retry</button>
+                    <div style={{ padding: '1rem', background: '#fef2f2', border: '1px solid #fee2e2', color: '#991b1b', borderRadius: 'var(--radius)', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <AlertCircle size={18} />
+                        <div style={{ flex: 1 }}>{error}</div>
+                        <button onClick={fetchSubjects} style={{ textDecoration: 'underline', color: 'inherit', fontWeight: 600, cursor: 'pointer', border: 'none', background: 'none' }}>Retry</button>
                     </div>
                 )}
 
-                {loading ? (
-                    <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--muted-foreground)' }}>
-                        <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 1rem' }} />
-                        <p>Loading subjects...</p>
+                {loading || authLoading ? (
+                    <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--muted-foreground)' }}>
+                        <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 1.5rem', opacity: 0.5 }} />
+                        <p style={{ fontWeight: 500 }}>{authLoading ? 'Verifying Admin Session...' : 'Fetching your subjects from database...'}</p>
                     </div>
                 ) : subjects.length === 0 && !error ? (
-                    <p style={{ textAlign: 'center', color: 'var(--muted-foreground)', padding: '2rem' }}>No subjects found. Add your first one above!</p>
+                    <p style={{ textAlign: 'center', color: 'var(--muted-foreground)', padding: '2rem' }}>No subjects found. Create one to get started!</p>
                 ) : (
                     subjects.map(subject => (
                         <div key={subject.id} className="premium-glass" style={{ padding: '1rem 1.5rem', borderRadius: 'var(--radius)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -171,7 +175,7 @@ export const SubjectManager = () => {
                                             type="text"
                                             value={newName}
                                             onChange={(e) => setNewName(e.target.value)}
-                                            style={{ flex: 1, padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid var(--primary)', background: 'var(--background)' }}
+                                            style={{ flex: 1, padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid var(--primary)', background: 'var(--background)', color: 'var(--fg)' }}
                                             autoFocus
                                         />
                                         <input
@@ -193,8 +197,8 @@ export const SubjectManager = () => {
                                         <span style={{ fontWeight: 500 }}>{subject.name}</span>
                                     </div>
                                     <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                        <button onClick={() => startEdit(subject)} className="btn btn-ghost" style={{ padding: '0.5rem' }}><Edit2 size={16} /></button>
-                                        <button onClick={() => handleDelete(subject.id)} className="btn btn-ghost" style={{ padding: '0.5rem', color: '#ef4444' }}><Trash2 size={16} /></button>
+                                        <button onClick={() => startEdit(subject)} className="btn btn-ghost" style={{ padding: '0.4rem' }}><Edit2 size={16} /></button>
+                                        <button onClick={() => handleDelete(subject.id)} className="btn btn-ghost" style={{ padding: '0.4rem', color: '#ef4444' }}><Trash2 size={16} /></button>
                                     </div>
                                 </>
                             )}

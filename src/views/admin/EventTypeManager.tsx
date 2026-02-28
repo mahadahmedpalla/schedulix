@@ -1,7 +1,7 @@
 import { useState, useEffect, type FormEvent, useCallback } from 'react';
 import { supabase } from '../../services/supabase.ts';
 import { useAuth } from '../../context/AuthContext.tsx';
-import { Plus, Trash2, Edit2, Check, X, RefreshCw } from 'lucide-react';
+import { Plus, Trash2, Edit2, Check, X, RefreshCw, AlertCircle } from 'lucide-react';
 
 interface EventType {
     id: string;
@@ -9,7 +9,7 @@ interface EventType {
 }
 
 export const EventTypeManager = () => {
-    const { user, loading: authLoading } = useAuth();
+    const { user, role, loading: authLoading } = useAuth();
     const [types, setTypes] = useState<EventType[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -17,7 +17,9 @@ export const EventTypeManager = () => {
     const [editingId, setEditingId] = useState<string | null>(null);
 
     const fetchTypes = useCallback(async () => {
-        if (!user) return;
+        if (authLoading || !user || role !== 'admin') {
+            return;
+        }
 
         setLoading(true);
         setError(null);
@@ -35,7 +37,7 @@ export const EventTypeManager = () => {
         } finally {
             setLoading(false);
         }
-    }, [user]);
+    }, [user, role, authLoading]);
 
     useEffect(() => {
         fetchTypes();
@@ -49,7 +51,7 @@ export const EventTypeManager = () => {
 
     const handleAdd = async (e: FormEvent) => {
         e.preventDefault();
-        if (!newName) return;
+        if (!newName || loading) return;
 
         const { data, error: insertError } = await supabase
             .from('event_types')
@@ -101,6 +103,7 @@ export const EventTypeManager = () => {
                     className="btn btn-ghost"
                     title="Refresh list"
                     style={{ padding: '0.4rem' }}
+                    disabled={loading || authLoading}
                 >
                     <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
                 </button>
@@ -114,11 +117,11 @@ export const EventTypeManager = () => {
                         value={editingId ? '' : newName}
                         onChange={(e) => !editingId && setNewName(e.target.value)}
                         placeholder="e.g. Assignment, Quiz, Exam"
-                        style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--background)' }}
-                        disabled={!!editingId}
+                        style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--fg)' }}
+                        disabled={!!editingId || authLoading}
                     />
                 </div>
-                <button type="submit" className="btn btn-primary" style={{ alignSelf: 'flex-end', height: '42px' }} disabled={!!editingId || loading}>
+                <button type="submit" className="btn btn-primary" style={{ alignSelf: 'flex-end', height: '42px' }} disabled={!!editingId || loading || authLoading}>
                     <Plus size={18} />
                     Add Type
                 </button>
@@ -126,16 +129,17 @@ export const EventTypeManager = () => {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {error && (
-                    <div style={{ padding: '1rem', background: '#fef2f2', border: '1px solid #fee2e2', color: '#991b1b', borderRadius: 'var(--radius)', fontSize: '0.875rem' }}>
-                        {error}
-                        <button onClick={fetchTypes} style={{ marginLeft: '1rem', textDecoration: 'underline', color: 'inherit', fontWeight: 600 }}>Retry</button>
+                    <div style={{ padding: '1rem', background: '#fef2f2', border: '1px solid #fee2e2', color: '#991b1b', borderRadius: 'var(--radius)', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <AlertCircle size={18} />
+                        <div style={{ flex: 1 }}>{error}</div>
+                        <button onClick={fetchTypes} style={{ textDecoration: 'underline', color: 'inherit', fontWeight: 600, cursor: 'pointer', border: 'none', background: 'none' }}>Retry</button>
                     </div>
                 )}
 
-                {loading ? (
-                    <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--muted-foreground)' }}>
-                        <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 1rem' }} />
-                        <p>Loading types...</p>
+                {loading || authLoading ? (
+                    <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--muted-foreground)' }}>
+                        <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 1.5rem', opacity: 0.5 }} />
+                        <p style={{ fontWeight: 500 }}>{authLoading ? 'Syncing your identity...' : 'Fetching event types...'}</p>
                     </div>
                 ) : types.length === 0 && !error ? (
                     <p style={{ textAlign: 'center', color: 'var(--muted-foreground)', padding: '2rem' }}>No event types found.</p>
@@ -148,7 +152,7 @@ export const EventTypeManager = () => {
                                         type="text"
                                         value={newName}
                                         onChange={(e) => setNewName(e.target.value)}
-                                        style={{ flex: 1, padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid var(--primary)', background: 'var(--background)' }}
+                                        style={{ flex: 1, padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid var(--primary)', background: 'var(--background)', color: 'var(--fg)' }}
                                         autoFocus
                                     />
                                     <div style={{ display: 'flex', gap: '0.5rem', marginLeft: '1rem' }}>
@@ -160,8 +164,8 @@ export const EventTypeManager = () => {
                                 <>
                                     <span style={{ fontWeight: 500 }}>{type.name}</span>
                                     <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                        <button onClick={() => { setEditingId(type.id); setNewName(type.name); }} className="btn btn-ghost" style={{ padding: '0.5rem' }}><Edit2 size={16} /></button>
-                                        <button onClick={() => handleDelete(type.id)} className="btn btn-ghost" style={{ padding: '0.5rem', color: '#ef4444' }}><Trash2 size={16} /></button>
+                                        <button onClick={() => { setEditingId(type.id); setNewName(type.name); }} className="btn btn-ghost" style={{ padding: '0.4rem' }}><Edit2 size={16} /></button>
+                                        <button onClick={() => handleDelete(type.id)} className="btn btn-ghost" style={{ padding: '0.4rem', color: '#ef4444' }}><Trash2 size={16} /></button>
                                     </div>
                                 </>
                             )}

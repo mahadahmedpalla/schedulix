@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode, useCallback } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode, useCallback, useRef } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../services/supabase.ts";
 
@@ -24,8 +24,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // We only start with loading: false if we have a cached role.
     const [loading, setLoading] = useState(!localStorage.getItem(STORAGE_KEY));
+    const isFetchingRole = useRef(false);
 
     const fetchRole = useCallback(async (userId: string) => {
+        if (isFetchingRole.current) return;
+        isFetchingRole.current = true;
+
         try {
             const { data, error } = await supabase
                 .from("user_roles")
@@ -47,14 +51,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             return "student";
         } finally {
             setLoading(false);
+            isFetchingRole.current = false;
         }
     }, []);
 
     useEffect(() => {
         let mounted = true;
 
-        // Consolidate: Fetch session and then listen for changes.
         const initialize = async () => {
+            // 1. Check for initial session
             const { data: { session } } = await supabase.auth.getSession();
             if (!mounted) return;
 
@@ -71,6 +76,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         initialize();
 
+        // 2. Subscribe to changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             if (!mounted) return;
 
@@ -81,14 +87,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 setRole(null);
                 localStorage.removeItem(STORAGE_KEY);
                 setLoading(false);
-            } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+            } else if (e === 'SIGNED_IN' || e === 'TOKEN_REFRESHED' || e === 'USER_UPDATED') {
                 if (session?.user) {
+                    const prevUser = user;
                     setUser(session.user);
-                    // Ensure loading is set if role is unknown
-                    if (!role || session.user.id !== user?.id) {
+
+                    // If user changed or we lost our role, we MUST block and fetch.
+                    if (!role || session.user.id !== prevUser?.id) {
                         setLoading(true);
+                        await fetchRole(session.user.id);
+                    } else {
+                        // Background refresh for existing role
+                        fetchRole(session.user.id);
                     }
-                    await fetchRole(session.user.id);
                 }
             }
         });
@@ -97,7 +108,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             mounted = false;
             subscription.unsubscribe();
         };
-        // Dependency array: stable fetchRole
+        // Dependency array: stable fetchRole and initial mount only
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [fetchRole]);
 
     return (
