@@ -62,7 +62,7 @@ export const Calendar: FC<CalendarProps> = ({ events, onDateClick, selectedSubje
         // -- Calculation for Highlight Background --
         let backgroundColor = "transparent";
         if (hasEvents) {
-            const opacity = 0.45; // Enhanced for vibrancy (User requested 40-45%)
+            const opacity = 0.35; // Lowered from 45% to 35% as requested
             if (!selectedSubjectIds || selectedSubjectIds.length === 0) {
                 // "ALL" Filter -> Teal Highlight
                 backgroundColor = `rgba(20, 184, 166, ${opacity})`;
