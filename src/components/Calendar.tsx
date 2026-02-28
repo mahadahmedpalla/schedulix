@@ -62,15 +62,24 @@ export const Calendar: FC<CalendarProps> = ({ events, onDateClick, selectedSubje
         // -- Calculation for Highlight Background --
         let backgroundColor = "transparent";
         if (hasEvents) {
+            const opacity = 0.45; // Enhanced for vibrancy (User requested 40-45%)
             if (!selectedSubjectIds || selectedSubjectIds.length === 0) {
-                // "ALL" Filter -> Teal Highlight (approx 0.15 opacity for teal #14b8a6)
-                backgroundColor = "rgba(20, 184, 166, 0.15)";
+                // "ALL" Filter -> Teal Highlight
+                backgroundColor = `rgba(20, 184, 166, ${opacity})`;
             } else if (selectedSubjectIds.length === 1) {
-                // Single Subject Filter -> Subject Color Highlight (40% opacity)
+                // Single Subject Filter -> Subject Color Highlight
                 const activeSubjectId = selectedSubjectIds[0];
                 const matchingSubject = allSubjects?.find(s => s.id === activeSubjectId);
-                const baseColor = matchingSubject?.color ?? (activeSubjectId === 'personal' ? "#000000" : "transparent");
-                backgroundColor = `${baseColor}40`;
+                const baseColor = matchingSubject?.color ?? (activeSubjectId === 'personal' ? "#000000" : null);
+
+                if (baseColor && baseColor.startsWith('#')) {
+                    const r = parseInt(baseColor.slice(1, 3), 16);
+                    const g = parseInt(baseColor.slice(3, 5), 16);
+                    const b = parseInt(baseColor.slice(5, 7), 16);
+                    backgroundColor = `rgba(${r}, ${g}, ${b}, ${opacity})`;
+                } else if (baseColor) {
+                    backgroundColor = baseColor;
+                }
             }
         }
 
