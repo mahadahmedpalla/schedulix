@@ -72,7 +72,7 @@ export const Calendar: FC<CalendarProps> = ({ events, onDateClick }) => {
                             <span
                                 key={i}
                                 className="event-dot"
-                                style={{ backgroundColor: e.subjects?.color ?? "var(--fg-subtle)" }}
+                                style={{ backgroundColor: e.subjects?.color ?? (e.is_global === false ? "#000000" : "var(--fg-subtle)") }}
                             />
                         ))}
                         {dayEvents.length > 4 && (
