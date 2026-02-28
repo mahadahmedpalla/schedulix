@@ -1,5 +1,5 @@
 import { useMemo, useState, type FC } from "react";
-import { X, FileText, Tag, CalendarX, User, CheckCircle, Circle } from "lucide-react";
+import { X, FileText, Tag, CalendarX, User, CheckCircle } from "lucide-react";
 import { supabase } from "../services/supabase";
 import { useAuth } from "../context/AuthContext";
 import "./EventDetailPanel.css";
@@ -155,7 +155,7 @@ export const EventDetailPanel: FC<EventDetailPanelProps> = ({ date, events, onCl
                                                     {event.is_completed ? (
                                                         <CheckCircle size={18} fill="currentColor" color="#ffffff" />
                                                     ) : (
-                                                        <Circle size={18} />
+                                                        <CheckCircle size={18} />
                                                     )}
                                                 </button>
                                             )}
