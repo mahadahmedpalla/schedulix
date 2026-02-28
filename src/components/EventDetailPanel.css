@@ -281,3 +281,53 @@
         padding: 1.25rem 1.5rem;
     }
 }
+
+/* ── Mobile ──────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+    .event-detail-panel {
+        top: auto;
+        bottom: 0;
+        width: 100%;
+        max-height: 85vh;
+        border-radius: 24px 24px 0 0;
+        border-left: none;
+        border-top: 1px solid var(--border);
+        transform: translateY(100%);
+        box-shadow: 0 -10px 25px -5px rgba(0, 0, 0, 0.1), 0 -8px 10px -6px rgba(0, 0, 0, 0.1);
+    }
+
+    .event-detail-panel.active {
+        transform: translateY(0);
+    }
+
+    /* Visual Handle for Bottom Sheet */
+    .panel-handle {
+        display: block;
+        width: 40px;
+        height: 5px;
+        background: var(--border-strong);
+        border-radius: 99px;
+        margin: 12px auto 0;
+        opacity: 0.4;
+    }
+
+    .panel-header {
+        padding: 0.75rem 1.5rem 1rem;
+    }
+
+    .panel-content {
+        padding: 1rem 1.5rem 2rem;
+        /* Extra bottom padding for safe area */
+    }
+
+    .panel-header-info h3 {
+        font-size: 1.125rem;
+    }
+}
+
+/* Hide handle on desktop */
+@media (min-width: 641px) {
+    .panel-handle {
+        display: none;
+    }
+}

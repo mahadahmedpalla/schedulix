@@ -88,6 +88,9 @@ export const EventDetailPanel: FC<EventDetailPanelProps> = ({ date, events, onCl
         <>
             <div className={`panel-overlay${date ? " active" : ""}`} onClick={onClose} />
             <aside className={`event-detail-panel${date ? " active" : ""}`}>
+                {/* Mobile Drag Handle */}
+                <div className="panel-handle" />
+
                 {/* Header */}
                 <div className="panel-header">
                     <div className="panel-header-info">
