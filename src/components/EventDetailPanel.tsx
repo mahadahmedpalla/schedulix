@@ -76,8 +76,13 @@ export const EventDetailPanel: FC<EventDetailPanelProps> = ({ date, events, onCl
         }
     };
 
-    const formatDate = (d: Date) =>
-        d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+    const formatDate = (d: Date) => {
+        // Manual formatting to avoid timezone shifts in the header display
+        const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+        return `${days[d.getDay()]}, ${months[d.getMonth()]} ${d.getDate()}`;
+    };
 
     return (
         <>
