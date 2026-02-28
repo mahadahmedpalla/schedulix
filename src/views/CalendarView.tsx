@@ -79,7 +79,7 @@ export const CalendarView = () => {
             </div>
 
             {/* ── Calendar card ── */}
-            <div className="surface" style={{ padding: "1.5rem", minHeight: "560px" }}>
+            <div className="surface calendar-card-wrapper" style={{ minHeight: "500px" }}>
                 {loading ? (
                     <div
                         style={{

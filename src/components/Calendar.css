@@ -75,7 +75,8 @@
     background: var(--border);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    overflow: hidden;
+    overflow: visible;
+    /* Allow content to grow without cropping */
     animation: fadeIn 0.25s ease-out;
 }
 
@@ -99,7 +100,8 @@
     justify-content: space-between;
     cursor: pointer;
     transition: all 0.2s, background-color 0.4s ease;
-    min-height: 80px;
+    min-height: 100px;
+    /* Increased for better default visibility */
 }
 
 .calendar-day:hover {
@@ -208,30 +210,59 @@
     }
 }
 
+.calendar-card-wrapper {
+    padding: 1.5rem;
+}
+
 /* ── Responsive ──────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
+    .calendar-card-wrapper {
+        padding: 0.75rem;
+    }
+
+    .calendar-header {
+        margin-bottom: 1rem;
+    }
+
     .calendar-month-title {
         font-size: 1.1rem;
     }
 
     .calendar-day {
         min-height: 50px;
-        padding: 0.25rem;
+        aspect-ratio: auto;
+        /* Flex height on mobile */
+        padding: 0.2rem;
     }
 
     .weekday {
         font-size: 0.65rem;
-        padding: 0.35rem 0.25rem;
+        padding: 0.35rem 0.15rem;
     }
 
     .day-number {
         font-size: 0.75rem;
-        width: 22px;
-        height: 22px;
+        width: 20px;
+        height: 20px;
+    }
+
+    .custom-badge {
+        font-size: 0.5rem;
+        padding: 1px 3px;
+        border-radius: 2px;
+    }
+
+    .completion-check-icon {
+        width: 12px;
+        height: 12px;
     }
 
     .event-dot {
         width: 4px;
         height: 4px;
+    }
+
+    .event-indicators {
+        gap: 2px;
     }
 }
