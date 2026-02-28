@@ -24,6 +24,22 @@ export const EventDetailPanel: FC<EventDetailPanelProps> = ({ date, events, onCl
     const { user } = useAuth();
     const [toggling, setToggling] = useState<string | null>(null);
 
+    // Hooks MUST be called at the top level, before any early returns.
+    const sortedEvents = useMemo(() => {
+        return [...events].sort((a, b) => {
+            if (a.is_global === b.is_global) return 0;
+            return a.is_global ? 1 : -1; // false (custom) comes before true (global)
+        });
+    }, [events]);
+
+    const lastCustomIndex = useMemo(() => {
+        let lastIndex = -1;
+        sortedEvents.forEach((e, i) => {
+            if (e.is_global === false) lastIndex = i;
+        });
+        return lastIndex;
+    }, [sortedEvents]);
+
     if (!date) return null;
 
     const toggleCompletion = async (event: any) => {
@@ -62,22 +78,6 @@ export const EventDetailPanel: FC<EventDetailPanelProps> = ({ date, events, onCl
 
     const formatDate = (d: Date) =>
         d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
-
-    // SORTING: Personal (custom) events first, then global
-    const sortedEvents = useMemo(() => {
-        return [...events].sort((a, b) => {
-            if (a.is_global === b.is_global) return 0;
-            return a.is_global ? 1 : -1; // false (custom) comes before true (global)
-        });
-    }, [events]);
-
-    const lastCustomIndex = useMemo(() => {
-        let lastIndex = -1;
-        sortedEvents.forEach((e, i) => {
-            if (e.is_global === false) lastIndex = i;
-        });
-        return lastIndex;
-    }, [sortedEvents]);
 
     return (
         <>
