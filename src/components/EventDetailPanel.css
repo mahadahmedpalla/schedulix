@@ -285,7 +285,7 @@
 /* ── Mobile ──────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
     .event-detail-panel {
-        width: 100vw;
+        width: 100%;
         border-radius: 24px 0 0 24px;
         border-left: 1px solid var(--border);
         border-top: none;
