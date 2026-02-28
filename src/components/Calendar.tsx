@@ -79,10 +79,23 @@ export const Calendar: FC<CalendarProps> = ({ events, onDateClick, selectedSubje
                 key={d}
                 className={`calendar-day${hasEvents ? " has-events" : ""}${isToday ? " today" : ""}${allEventsCompleted ? " day-completed" : ""}`}
                 onClick={() => onDateClick(date)}
-                style={{ backgroundColor }}
                 title={hasEvents ? `${dayEvents.length} event${dayEvents.length > 1 ? "s" : ""}` : undefined}
+                style={{ position: 'relative' }} // For absolute highlight
             >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
+                {/* Highlight Overlay */}
+                <div
+                    className="day-highlight-overlay"
+                    style={{
+                        position: 'absolute',
+                        inset: 0,
+                        backgroundColor,
+                        zIndex: 0,
+                        transition: 'background-color 0.4s ease',
+                        pointerEvents: 'none'
+                    }}
+                />
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', position: 'relative', zIndex: 1 }}>
                     <span className="day-number">{d}</span>
                     <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                         {personalEvents.length > 0 && (
@@ -98,7 +111,7 @@ export const Calendar: FC<CalendarProps> = ({ events, onDateClick, selectedSubje
                 </div>
 
                 {hasEvents && (
-                    <div className="event-indicators">
+                    <div className="event-indicators" style={{ position: 'relative', zIndex: 1 }}>
                         {dayEvents.slice(0, 4).map((e, i) => (
                             <span
                                 key={i}
