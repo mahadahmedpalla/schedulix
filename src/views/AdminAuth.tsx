@@ -15,11 +15,14 @@ export const AdminAuth = ({ mode }: { mode: "login" | "signup" }) => {
 
     // REACTIVE NAVIGATION: 
     // Instead of forcing navigation in handleAuth, we watch the Auth state.
-    // This prevents race conditions where the dashboard kicks you back 
-    // before the role is fully resolved.
     useEffect(() => {
-        if (!authLoading && user && role === "admin") {
-            navigate("/admin");
+        if (!authLoading && user && role) {
+            if (role === "admin") {
+                navigate("/admin");
+            } else {
+                // Safety: If a student manages to log in here, send them to the public calendar
+                navigate("/");
+            }
         }
     }, [user, role, authLoading, navigate]);
 

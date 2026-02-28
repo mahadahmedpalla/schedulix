@@ -1,14 +1,28 @@
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { supabase } from "../services/supabase.ts";
 import { useNavigate, Link } from "react-router-dom";
 import { LogIn, Lock, Mail, CalendarDays, ArrowLeft } from "lucide-react";
+import { useAuth } from "../context/AuthContext.tsx";
 
 export const Login = () => {
+    const { user, role, loading: authLoading } = useAuth();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
+
+    // ROLE-AWARE NAVIGATION:
+    // Once we are logged in and the role is resolved, send the user to the right place.
+    useEffect(() => {
+        if (!authLoading && user && role) {
+            if (role === 'admin') {
+                navigate("/admin");
+            } else {
+                navigate("/");
+            }
+        }
+    }, [user, role, authLoading, navigate]);
 
     const handleLogin = async (e: FormEvent) => {
         e.preventDefault();
@@ -21,7 +35,8 @@ export const Login = () => {
             setError(error.message);
             setLoading(false);
         } else {
-            navigate("/admin");
+            // Navigation is handled by the useEffect above once AuthContext resolves the role
+            // We keep loading: true to show the spinner while it hydrates
         }
     };
 
@@ -98,7 +113,7 @@ export const Login = () => {
                         Sign in to Schedulix
                     </h1>
                     <p style={{ color: "var(--fg-muted)", fontSize: "0.875rem" }}>
-                        Admin access required
+                        Enter your credentials to access your account
                     </p>
                 </div>
 
@@ -152,7 +167,7 @@ export const Login = () => {
                                 type="email"
                                 value={email}
                                 onChange={e => setEmail(e.target.value)}
-                                placeholder="admin@example.com"
+                                placeholder="student@example.com"
                                 required
                                 style={{
                                     width: "100%",
