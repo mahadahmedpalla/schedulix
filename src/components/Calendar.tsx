@@ -50,7 +50,12 @@ export const Calendar: FC<CalendarProps> = ({ events, onDateClick, selectedSubje
     // Day cells
     for (let d = 1; d <= totalDays; d++) {
         const date = new Date(year, month, d);
-        const dateStr = date.toISOString().split("T")[0];
+        // Manual formatting to YYYY-MM-DD to avoid timezone shifts from toISOString()
+        const yyyy = date.getFullYear();
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        const dd = String(date.getDate()).padStart(2, '0');
+        const dateStr = `${yyyy}-${mm}-${dd}`;
+
         const dayEvents = events.filter(e => e.date === dateStr);
         const personalEvents = dayEvents.filter(e => e.is_global === false);
         const isToday = date.getTime() === today.getTime();
