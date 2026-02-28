@@ -19,7 +19,13 @@ export const EventUploader = () => {
         type_id: '',
         title: '',
         description: '',
-        date: new Date().toISOString().split('T')[0],
+        date: (() => {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        })(),
         file: null as File | null
     });
 
@@ -99,7 +105,13 @@ export const EventUploader = () => {
                 type_id: '',
                 title: '',
                 description: '',
-                date: new Date().toISOString().split('T')[0],
+                date: (() => {
+                    const now = new Date();
+                    const y = now.getFullYear();
+                    const m = String(now.getMonth() + 1).padStart(2, '0');
+                    const d = String(now.getDate()).padStart(2, '0');
+                    return `${y}-${m}-${d}`;
+                })(),
                 file: null
             });
             setTimeout(() => setSuccess(false), 3000);

@@ -24,7 +24,12 @@ export const CalendarView = () => {
 
     const selectedDateEvents = useMemo(() => {
         if (!selectedDate) return [];
-        const dateStr = selectedDate.toISOString().split("T")[0];
+        // Manual formatting to YYYY-MM-DD to avoid timezone shifts
+        const yyyy = selectedDate.getFullYear();
+        const mm = String(selectedDate.getMonth() + 1).padStart(2, '0');
+        const dd = String(selectedDate.getDate()).padStart(2, '0');
+        const dateStr = `${yyyy}-${mm}-${dd}`;
+
         return events.filter(e => e.date === dateStr);
     }, [events, selectedDate]);
 
