@@ -141,6 +141,31 @@
     box-shadow: var(--shadow);
 }
 
+/* ── Panel Divider ───────────────────────────────────────────────────── */
+.panel-divider {
+    display: flex;
+    align-items: center;
+    margin: 1.5rem 0;
+    gap: 1rem;
+}
+
+.panel-divider::before,
+.panel-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+
+.panel-divider span {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--fg-muted);
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+}
+
 /* ── Subject tag ─────────────────────────────────────────────────────── */
 .event-tag {
     display: inline-flex;
