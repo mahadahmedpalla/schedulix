@@ -2,9 +2,11 @@ import { useState, useEffect, type FormEvent, useCallback } from 'react';
 import { supabase } from '../../services/supabase.ts';
 import { useAuth } from '../../context/AuthContext.tsx';
 import { Upload, Calendar, Send, CheckCircle, RefreshCw, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export const EventUploader = () => {
     const { user, role, loading: authLoading } = useAuth();
+    const navigate = useNavigate();
     const [subjects, setSubjects] = useState<any[]>([]);
     const [types, setTypes] = useState<any[]>([]);
     const [fetching, setFetching] = useState(true);
@@ -22,7 +24,11 @@ export const EventUploader = () => {
     });
 
     const fetchData = useCallback(async () => {
-        if (authLoading || !user || role !== 'admin') {
+        if (authLoading) return;
+
+        if (!user || role !== 'admin') {
+            setFetching(false);
+            setFetchError("Admin session required. Please log in.");
             return;
         }
 
@@ -50,12 +56,6 @@ export const EventUploader = () => {
     useEffect(() => {
         fetchData();
     }, [fetchData]);
-
-    useEffect(() => {
-        if (!authLoading && !user) {
-            setFetching(false);
-        }
-    }, [authLoading, user]);
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
@@ -129,9 +129,16 @@ export const EventUploader = () => {
             )}
 
             {fetchError && (
-                <div style={{ background: '#fef2f2', border: '1px solid #fee2e2', color: '#991b1b', padding: '1rem', borderRadius: 'var(--radius)', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <AlertCircle size={20} />
-                    <div style={{ flex: 1 }}>{fetchError}</div>
+                <div style={{ background: '#fef2f2', border: '1px solid #fee2e2', color: '#991b1b', padding: '1.25rem', borderRadius: 'var(--radius)', marginBottom: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <AlertCircle size={20} />
+                        <div style={{ fontWeight: 500 }}>{fetchError}</div>
+                    </div>
+                    {!user && (
+                        <button onClick={() => navigate('/sec/admin/login')} className="btn btn-primary" style={{ width: 'fit-content', padding: '0.5rem 1rem' }}>
+                            Go to Login Dashboard
+                        </button>
+                    )}
                 </div>
             )}
 

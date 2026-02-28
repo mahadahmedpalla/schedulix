@@ -2,6 +2,7 @@ import { useState, useEffect, type FormEvent, useCallback } from 'react';
 import { supabase } from '../../services/supabase.ts';
 import { useAuth } from '../../context/AuthContext.tsx';
 import { Plus, Trash2, Edit2, Check, X, RefreshCw, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface Subject {
     id: string;
@@ -11,6 +12,7 @@ interface Subject {
 
 export const SubjectManager = () => {
     const { user, role, loading: authLoading } = useAuth();
+    const navigate = useNavigate();
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -19,8 +21,13 @@ export const SubjectManager = () => {
     const [editingId, setEditingId] = useState<string | null>(null);
 
     const fetchSubjects = useCallback(async () => {
-        // DO NOT fetch until we are 100% sure we have a valid admin session.
-        if (authLoading || !user || role !== 'admin') {
+        // Wait for auth to settle
+        if (authLoading) return;
+
+        // Protection: If auth settled but no user/role, show session error.
+        if (!user || role !== 'admin') {
+            setLoading(false);
+            setError("Your admin session has expired or is invalid. Please log in again.");
             return;
         }
 
@@ -36,8 +43,7 @@ export const SubjectManager = () => {
             if (data) setSubjects(data);
         } catch (err: any) {
             console.error("Fetch subjects error:", err);
-            setError(err.message || "Failed to load subjects.");
-            // If we got a 401/403, it means our session is actually invalid.
+            setError(err.message || "Failed to load subjects from database.");
         } finally {
             setLoading(false);
         }
@@ -46,13 +52,6 @@ export const SubjectManager = () => {
     useEffect(() => {
         fetchSubjects();
     }, [fetchSubjects]);
-
-    // Handle initial loading states
-    useEffect(() => {
-        if (!authLoading && !user) {
-            setLoading(false); // Stop spinning if we are definitely logged out.
-        }
-    }, [authLoading, user]);
 
     const handleAdd = async (e: FormEvent) => {
         e.preventDefault();
@@ -151,10 +150,17 @@ export const SubjectManager = () => {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {error && (
-                    <div style={{ padding: '1rem', background: '#fef2f2', border: '1px solid #fee2e2', color: '#991b1b', borderRadius: 'var(--radius)', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <AlertCircle size={18} />
-                        <div style={{ flex: 1 }}>{error}</div>
-                        <button onClick={fetchSubjects} style={{ textDecoration: 'underline', color: 'inherit', fontWeight: 600, cursor: 'pointer', border: 'none', background: 'none' }}>Retry</button>
+                    <div style={{ padding: '1.25rem', background: '#fef2f2', border: '1px solid #fee2e2', color: '#991b1b', borderRadius: 'var(--radius)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <AlertCircle size={20} />
+                            <div style={{ fontWeight: 500 }}>{error}</div>
+                        </div>
+                        {!user && (
+                            <button onClick={() => navigate('/sec/admin/login')} className="btn btn-primary" style={{ width: 'fit-content', padding: '0.5rem 1rem' }}>
+                                Go to Login Dashboard
+                            </button>
+                        )}
+                        {user && <button onClick={fetchSubjects} style={{ textDecoration: 'underline', border: 'none', background: 'none', color: 'inherit', cursor: 'pointer', textAlign: 'left', width: 'fit-content' }}>Retry Fetching Data</button>}
                     </div>
                 )}
 

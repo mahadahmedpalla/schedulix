@@ -22,9 +22,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return localStorage.getItem(STORAGE_KEY) as "admin" | "student" | null;
     });
 
-    // We only start with loading: false if we have a cached role.
-    const [loading, setLoading] = useState(!localStorage.getItem(STORAGE_KEY));
+    // Safety Loading: Start as true unless we are POSITIVE we have a cached role.
+    const [loading, setLoading] = useState(true);
     const isFetchingRole = useRef(false);
+    const initStarted = useRef(false);
 
     const fetchRole = useCallback(async (userId: string) => {
         if (isFetchingRole.current) return;
@@ -37,18 +38,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 .eq("id", userId)
                 .single();
 
-            if (error && error.code !== "PGRST116") {
-                console.error("Error fetching role:", error);
+            if (!error && data) {
+                const userRole = data.role as "admin" | "student";
+                setRole(userRole);
+                localStorage.setItem(STORAGE_KEY, userRole);
+            } else {
+                setRole("student");
+                localStorage.setItem(STORAGE_KEY, "student");
             }
-            const userRole = data?.role ?? "student";
-            setRole(userRole as "admin" | "student");
-            localStorage.setItem(STORAGE_KEY, userRole);
-            return userRole;
         } catch (err) {
             console.error("Auth Exception:", err);
             setRole("student");
-            localStorage.setItem(STORAGE_KEY, "student");
-            return "student";
         } finally {
             setLoading(false);
             isFetchingRole.current = false;
@@ -57,49 +57,48 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     useEffect(() => {
         let mounted = true;
+        if (initStarted.current) return;
+        initStarted.current = true;
 
         const initialize = async () => {
-            // 1. Check for initial session
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!mounted) return;
+            try {
+                // 1. Force a session check immediately
+                const { data: { session } } = await supabase.auth.getSession();
 
-            if (session?.user) {
-                setUser(session.user);
-                await fetchRole(session.user.id);
-            } else {
-                setUser(null);
-                setRole(null);
-                localStorage.removeItem(STORAGE_KEY);
-                setLoading(false);
+                if (!mounted) return;
+
+                if (session?.user) {
+                    setUser(session.user);
+                    await fetchRole(session.user.id);
+                } else {
+                    setUser(null);
+                    setRole(null);
+                    localStorage.removeItem(STORAGE_KEY);
+                    setLoading(false);
+                }
+            } catch (err) {
+                console.error("Critical Auth Init Failure:", err);
+                if (mounted) setLoading(false);
             }
         };
 
         initialize();
 
-        // 2. Subscribe to changes
+        // 2. Continuous listener for state changes (Login, Logout, Token Refresh)
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             if (!mounted) return;
 
             const e = event as any;
 
-            if (e === 'SIGNED_OUT' || e === 'USER_DELETED') {
+            if (e === 'SIGNED_OUT') {
                 setUser(null);
                 setRole(null);
                 localStorage.removeItem(STORAGE_KEY);
                 setLoading(false);
             } else if (e === 'SIGNED_IN' || e === 'TOKEN_REFRESHED' || e === 'USER_UPDATED') {
                 if (session?.user) {
-                    const prevUser = user;
                     setUser(session.user);
-
-                    // If user changed or we lost our role, we MUST block and fetch.
-                    if (!role || session.user.id !== prevUser?.id) {
-                        setLoading(true);
-                        await fetchRole(session.user.id);
-                    } else {
-                        // Background refresh for existing role
-                        fetchRole(session.user.id);
-                    }
+                    fetchRole(session.user.id);
                 }
             }
         });
@@ -108,7 +107,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             mounted = false;
             subscription.unsubscribe();
         };
-        // Dependency array: stable fetchRole and initial mount only
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [fetchRole]);
 

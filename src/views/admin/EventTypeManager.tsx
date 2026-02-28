@@ -2,6 +2,7 @@ import { useState, useEffect, type FormEvent, useCallback } from 'react';
 import { supabase } from '../../services/supabase.ts';
 import { useAuth } from '../../context/AuthContext.tsx';
 import { Plus, Trash2, Edit2, Check, X, RefreshCw, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface EventType {
     id: string;
@@ -10,6 +11,7 @@ interface EventType {
 
 export const EventTypeManager = () => {
     const { user, role, loading: authLoading } = useAuth();
+    const navigate = useNavigate();
     const [types, setTypes] = useState<EventType[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -17,7 +19,11 @@ export const EventTypeManager = () => {
     const [editingId, setEditingId] = useState<string | null>(null);
 
     const fetchTypes = useCallback(async () => {
-        if (authLoading || !user || role !== 'admin') {
+        if (authLoading) return;
+
+        if (!user || role !== 'admin') {
+            setLoading(false);
+            setError("Session invalid. Please log in again.");
             return;
         }
 
@@ -42,12 +48,6 @@ export const EventTypeManager = () => {
     useEffect(() => {
         fetchTypes();
     }, [fetchTypes]);
-
-    useEffect(() => {
-        if (!authLoading && !user) {
-            setLoading(false);
-        }
-    }, [authLoading, user]);
 
     const handleAdd = async (e: FormEvent) => {
         e.preventDefault();
@@ -129,10 +129,16 @@ export const EventTypeManager = () => {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {error && (
-                    <div style={{ padding: '1rem', background: '#fef2f2', border: '1px solid #fee2e2', color: '#991b1b', borderRadius: 'var(--radius)', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <AlertCircle size={18} />
-                        <div style={{ flex: 1 }}>{error}</div>
-                        <button onClick={fetchTypes} style={{ textDecoration: 'underline', color: 'inherit', fontWeight: 600, cursor: 'pointer', border: 'none', background: 'none' }}>Retry</button>
+                    <div style={{ padding: '1.25rem', background: '#fef2f2', border: '1px solid #fee2e2', color: '#991b1b', borderRadius: 'var(--radius)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <AlertCircle size={20} />
+                            <div style={{ fontWeight: 500 }}>{error}</div>
+                        </div>
+                        {!user && (
+                            <button onClick={() => navigate('/sec/admin/login')} className="btn btn-primary" style={{ width: 'fit-content', padding: '0.5rem 1rem' }}>
+                                Go to Login Dashboard
+                            </button>
+                        )}
                     </div>
                 )}
 
