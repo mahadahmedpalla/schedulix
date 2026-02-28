@@ -41,7 +41,7 @@ export const AddPersonalEventModal = ({ onClose, onSuccess, subjects }: AddPerso
             {
                 title,
                 date,
-                subject_id: subjectId || null,
+                subject_id: subjectId === "personal" ? null : subjectId,
                 description,
                 created_by: user.id,
                 is_global: false,
@@ -168,7 +168,7 @@ export const AddPersonalEventModal = ({ onClose, onSuccess, subjects }: AddPerso
                                     style={{ width: "100%" }}
                                 >
                                     <option value="" disabled>Select...</option>
-                                    <option value="">Personal / General</option>
+                                    <option value="personal">Personal / General</option>
                                     {subjects.map(s => (
                                         <option key={s.id} value={s.id}>{s.name}</option>
                                     ))}
