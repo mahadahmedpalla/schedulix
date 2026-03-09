@@ -6,7 +6,6 @@ import { FilterBar } from "../components/FilterBar.tsx";
 import { useEvents } from "../hooks/useEvents.ts";
 import { useAuth } from "../context/AuthContext.tsx";
 import { AddPersonalEventModal } from "../components/AddPersonalEventModal.tsx";
-import { Plus } from "lucide-react";
 
 export const CalendarView = () => {
     const { user } = useAuth();
@@ -24,94 +23,59 @@ export const CalendarView = () => {
 
     const selectedDateEvents = useMemo(() => {
         if (!selectedDate) return [];
-        // Manual formatting to YYYY-MM-DD to avoid timezone shifts
         const yyyy = selectedDate.getFullYear();
         const mm = String(selectedDate.getMonth() + 1).padStart(2, '0');
         const dd = String(selectedDate.getDate()).padStart(2, '0');
         const dateStr = `${yyyy}-${mm}-${dd}`;
-
         return events.filter(e => e.date === dateStr);
     }, [events, selectedDate]);
 
     return (
         <Layout>
-            {/* ── Page header ── */}
-            <div style={{ marginBottom: "2rem" }}>
-                <h1 style={{ fontSize: "1.75rem", marginBottom: "0.25rem" }}>
-                    Academic Calendar
-                    <span
-                        style={{
-                            display: "inline-block",
-                            marginLeft: "0.75rem",
-                            fontSize: "0.75rem",
-                            fontWeight: 600,
-                            color: "var(--fg)",
-                            background: "var(--bg-raised)",
-                            border: "1px solid var(--border)",
-                            padding: "0.15rem 0.5rem",
-                            borderRadius: "99px",
-                            verticalAlign: "middle",
-                        }}
-                    >
-                        {new Date().getFullYear()}
-                    </span>
-                </h1>
-                <p style={{ color: "var(--fg-muted)", fontSize: "0.875rem", marginBottom: "1.25rem" }}>
-                    Click any date to see scheduled events.
-                </p>
+            <div className="dashboard-content-wrapper">
+                {/* ── Top Bar (Filters & Quick Actions) ── */}
+                <div className="dashboard-top-bar">
+                    <div className="filters-section">
+                        {!loading && subjects.length > 0 && (
+                            <FilterBar
+                                subjects={subjects}
+                                selectedSubjects={selectedSubjects}
+                                onChange={setSelectedSubjects}
+                            />
+                        )}
+                    </div>
 
-                {/* Filter bar & Actions row */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
-                    {subjects.length > 0 && (
-                        <FilterBar
-                            subjects={subjects}
-                            selectedSubjects={selectedSubjects}
-                            onChange={setSelectedSubjects}
-                        />
-                    )}
-
-                    {user && (
+                    <div className="quick-actions">
                         <button
-                            onClick={() => setIsAddModalOpen(true)}
-                            className="btn btn-outline"
-                            style={{ padding: "0.4rem 0.75rem", fontSize: "0.8125rem" }}
+                            onClick={() => user ? setIsAddModalOpen(true) : (window.location.href = '/login')}
+                            className={`btn ${user ? "btn-primary" : "btn-outline"}`}
+                            style={{ gap: "0.5rem" }}
                         >
-                            <Plus size={14} />
-                            Personal Event
+                            <span className="material-symbols-outlined">add</span>
+                            <span>{user ? "Add Event" : "Sign in to add events"}</span>
                         </button>
+                    </div>
+                </div>
+
+                {/* ── Calendar Section ── */}
+                <div className="dashboard-calendar-section">
+                    {loading ? (
+                        <div className="skeleton-calendar">
+                            <div className="spinner" />
+                            <p>Connecting to Schedulix...</p>
+                        </div>
+                    ) : (
+                        <Calendar
+                            events={filteredEvents}
+                            onDateClick={setSelectedDate}
+                            selectedSubjectIds={selectedSubjects}
+                            allSubjects={subjects}
+                        />
                     )}
                 </div>
             </div>
 
-            {/* ── Calendar card ── */}
-            <div className="surface calendar-card-wrapper" style={{ minHeight: "500px" }}>
-                {loading ? (
-                    <div
-                        style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            height: "400px",
-                            gap: "1rem",
-                        }}
-                    >
-                        <div className="spinner" />
-                        <p style={{ color: "var(--fg-muted)", fontSize: "0.875rem" }}>
-                            Loading calendar…
-                        </p>
-                    </div>
-                ) : (
-                    <Calendar
-                        events={filteredEvents}
-                        onDateClick={setSelectedDate}
-                        selectedSubjectIds={selectedSubjects}
-                        allSubjects={subjects}
-                    />
-                )}
-            </div>
-
-            {/* ── Event panel ── */}
+            {/* ── Detail Panel ── */}
             <EventDetailPanel
                 date={selectedDate}
                 events={selectedDateEvents}
@@ -119,7 +83,7 @@ export const CalendarView = () => {
                 onRefresh={refetchEvents}
             />
 
-            {/* ── Add Event Modal ── */}
+            {/* ── Modals ── */}
             {isAddModalOpen && (
                 <AddPersonalEventModal
                     subjects={subjects}

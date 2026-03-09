@@ -1,268 +1,257 @@
-/* ── Calendar container ──────────────────────────────────────────────── */
-.calendar-container {
-    width: 100%;
-    animation: fadeIn 0.3s ease-out;
+/* ── Calendar Card ────────────────────────────────────────────────── */
+.calendar-card {
+    background: var(--bg-surface);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
-/* ── Calendar header ─────────────────────────────────────────────────── */
-.calendar-header {
+/* ── Calendar Controls ── */
+.calendar-controls {
+    padding: 1.5rem 2rem;
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
+    align-items: flex-end;
+    gap: 1.5rem;
     flex-wrap: wrap;
-    gap: 1rem;
 }
 
-.calendar-month-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    letter-spacing: -0.02em;
-    color: var(--fg);
-    line-height: 1;
+.breadcrumb {
+    display: flex;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--fg-muted);
+    margin-bottom: 0.5rem;
 }
 
-.calendar-nav {
+.breadcrumb .active {
+    color: var(--primary);
+    font-weight: 500;
+}
+
+.calendar-current-info {
     display: flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: 1.5rem;
 }
 
-.calendar-nav-btn {
-    width: 32px;
-    height: 32px;
+.current-month-text {
+    font-size: 1.875rem;
+    font-weight: 800;
+    color: var(--fg);
+    margin: 0;
+}
+
+.mini-nav {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--bg-sidebar);
+}
+
+.nav-icon-btn,
+.nav-today-btn {
+    border: none;
+    background: transparent;
+    padding: 0.5rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: var(--radius-sm);
-    background: var(--bg-surface);
-    border: 1px solid var(--border);
     color: var(--fg-subtle);
     cursor: pointer;
-    transition: all 0.15s;
+    transition: all 0.2s;
 }
 
-.calendar-nav-btn:hover {
+.nav-icon-btn:hover,
+.nav-today-btn:hover {
     background: var(--bg-raised);
     color: var(--fg);
 }
 
-.calendar-today-btn {
+.nav-today-btn {
     padding: 0 0.75rem;
-    height: 32px;
-    font-size: 0.8rem;
-    font-weight: 500;
-    font-family: var(--font);
-    border-radius: var(--radius-sm);
-    background: var(--bg-surface);
-    border: 1px solid var(--border);
-    color: var(--fg-subtle);
-    cursor: pointer;
-    transition: all 0.15s;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
 }
 
-.calendar-today-btn:hover {
+.nav-icon-btn .material-symbols-outlined {
+    font-size: 20px !important;
+}
+
+/* View Switcher */
+.view-switcher .pill-group {
     background: var(--bg-raised);
-    color: var(--fg);
+    padding: 4px;
+    border-radius: var(--radius);
+    display: flex;
+    gap: 4px;
 }
 
-/* ── Grid ────────────────────────────────────────────────────────────── */
+.pill-btn {
+    border: none;
+    background: transparent;
+    padding: 0.35rem 1rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--fg-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.pill-btn.active {
+    background: var(--bg-surface);
+    color: var(--fg);
+    box-shadow: var(--shadow-sm);
+}
+
+.pill-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ── Calendar Grid ── */
+.calendar-grid-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    border-bottom: 1px solid var(--border);
+}
+
+.weekday-label {
+    padding: 1rem 0;
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--fg-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
 .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 1px;
-    /* Creates the border lines */
-    background: var(--border);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: visible;
-    /* Allow content to grow without cropping */
-    animation: fadeIn 0.25s ease-out;
+    grid-auto-rows: 1fr;
+    min-height: 600px;
 }
 
-/* ── Weekday headers ─────────────────────────────────────────────────── */
-.weekday {
-    background: var(--bg-raised);
-    padding: 0.5rem;
-    text-align: center;
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: var(--fg-muted);
-}
-
-/* ── Day cells ───────────────────────────────────────────────────────── */
 .calendar-day {
-    background: var(--bg-surface);
-    aspect-ratio: 1 / 1;
-    padding: 0.5rem;
+    padding: 0.75rem;
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    gap: 0.5rem;
     cursor: pointer;
-    transition: all 0.2s, background-color 0.4s ease;
-    min-height: 100px;
-    /* Increased for better default visibility */
+    transition: background 0.2s;
+    min-height: 120px;
+}
+
+.calendar-day:nth-child(7n) {
+    border-right: none;
 }
 
 .calendar-day:hover {
     background: var(--bg-raised);
 }
 
-.calendar-day.empty {
-    background: var(--bg-bg);
-    /* subtle gray */
-    cursor: default;
+.calendar-day.other-month {
+    background: rgba(241, 245, 249, 0.4);
+    /* slate-100 with opacity */
 }
 
-.calendar-day.empty:hover {
-    background: var(--bg-bg);
+.calendar-day.other-month .day-number {
+    color: var(--fg-muted);
+    opacity: 0.5;
 }
 
-/* ── Day number ──────────────────────────────────────────────────────── */
+.day-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
 .day-number {
     font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--fg-subtle);
-    line-height: 1;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: all 0.15s;
-    align-self: flex-start;
-}
-
-.calendar-day:hover .day-number,
-.calendar-day.has-events .day-number {
+    font-weight: 700;
     color: var(--fg);
 }
 
-/* ── Today ───────────────────────────────────────────────────────────── */
-.calendar-day.today .day-number {
-    background: var(--primary);
-    color: #ffffff;
-    font-weight: 600;
+.day-number.today-badge {
+    color: var(--primary);
+    position: relative;
 }
 
-/* ── Event indicators ────────────────────────────────────────────────── */
-.event-indicators {
-    display: flex;
-    gap: 3px;
-    flex-wrap: wrap;
-    align-items: center;
-    margin-top: auto;
-}
-
-.event-dot {
-    width: 6px;
-    height: 6px;
+.day-number.today-badge::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
     border-radius: 50%;
-    flex-shrink: 0;
+    background: var(--primary);
 }
 
-.event-more {
+/* ── Event Pills ── */
+.day-events-container {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+}
+
+.event-pill {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: transform 0.15s;
+}
+
+.event-pill:hover {
+    transform: translateX(2px);
+}
+
+.event-pill-more {
     font-size: 0.65rem;
     font-weight: 600;
-    color: var(--fg-muted);
-    line-height: 1;
+    color: var(--fg-subtle);
+    padding-left: 4px;
+    margin-top: 2px;
 }
 
-.custom-badge {
-    font-size: 0.6rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    background: #000000;
-    color: #ffffff;
-    padding: 2px 5px;
-    border-radius: 4px;
-    letter-spacing: 0.05em;
-    line-height: 1;
-    pointer-events: none;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
-}
-
-.custom-badge.personal-done {
-    background: #10b981;
-    /* Green */
-}
-
-.calendar-day.day-completed {
-    background: rgba(16, 185, 129, 0.03);
-}
-
-.completion-check-icon {
-    color: #10b981;
-    animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-@keyframes scaleIn {
-    from {
-        transform: scale(0);
-        opacity: 0;
+/* Mobile Adjustments */
+@media (max-width: 768px) {
+    .calendar-controls {
+        padding: 1rem;
     }
 
-    to {
-        transform: scale(1);
-        opacity: 1;
-    }
-}
-
-.calendar-card-wrapper {
-    padding: 1.5rem;
-}
-
-/* ── Responsive ──────────────────────────────────────────────────────── */
-@media (max-width: 640px) {
-    .calendar-card-wrapper {
-        padding: 0.75rem;
+    .current-month-text {
+        font-size: 1.25rem;
     }
 
-    .calendar-header {
-        margin-bottom: 1rem;
-    }
-
-    .calendar-month-title {
-        font-size: 1.1rem;
+    .calendar-grid {
+        min-height: 400px;
     }
 
     .calendar-day {
-        min-height: 50px;
-        aspect-ratio: auto;
-        /* Flex height on mobile */
-        padding: 0.2rem;
+        min-height: 80px;
+        padding: 0.4rem;
+        gap: 0.25rem;
     }
 
-    .weekday {
-        font-size: 0.65rem;
-        padding: 0.35rem 0.15rem;
-    }
-
-    .day-number {
-        font-size: 0.75rem;
-        width: 20px;
-        height: 20px;
-    }
-
-    .custom-badge {
-        font-size: 0.5rem;
-        padding: 1px 3px;
-        border-radius: 2px;
-    }
-
-    .completion-check-icon {
-        width: 12px;
-        height: 12px;
-    }
-
-    .event-dot {
-        width: 4px;
-        height: 4px;
-    }
-
-    .event-indicators {
-        gap: 2px;
+    .event-pill {
+        padding: 2px 4px;
+        font-size: 8px;
     }
 }

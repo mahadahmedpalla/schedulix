@@ -1,10 +1,10 @@
 import { useState, type FC } from "react";
-import { ChevronLeft, ChevronRight, CheckCircle2, CheckCircle } from "lucide-react";
 import "./Calendar.css";
 
 interface CalendarEvent {
     id: string;
     date: string;
+    title: string;
     is_global?: boolean;
     is_completed?: boolean;
     subjects?: { color: string };
@@ -23,7 +23,7 @@ const MONTH_NAMES = [
 ];
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-export const Calendar: FC<CalendarProps> = ({ events, onDateClick, selectedSubjectIds, allSubjects }) => {
+export const Calendar: FC<CalendarProps> = ({ events, onDateClick }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
 
     const year = currentDate.getFullYear();
@@ -44,128 +44,97 @@ export const Calendar: FC<CalendarProps> = ({ events, onDateClick, selectedSubje
 
     // Empty leading cells
     for (let i = 0; i < startDay; i++) {
-        cells.push(<div key={`e-${i}`} className="calendar-day empty" />);
+        cells.push(<div key={`e-${i}`} className="calendar-day other-month" />);
     }
 
     // Day cells
     for (let d = 1; d <= totalDays; d++) {
         const date = new Date(year, month, d);
-        // Manual formatting to YYYY-MM-DD to avoid timezone shifts from toISOString()
         const yyyy = date.getFullYear();
         const mm = String(date.getMonth() + 1).padStart(2, '0');
         const dd = String(date.getDate()).padStart(2, '0');
         const dateStr = `${yyyy}-${mm}-${dd}`;
 
         const dayEvents = events.filter(e => e.date === dateStr);
-        const personalEvents = dayEvents.filter(e => e.is_global === false);
         const isToday = date.getTime() === today.getTime();
-        const hasEvents = dayEvents.length > 0;
-
-        const allPersonalCompleted = personalEvents.length > 0 && personalEvents.every(e => e.is_completed);
-        const allEventsCompleted = dayEvents.length > 0 && dayEvents.every(e => e.is_completed);
-
-        // -- Calculation for Highlight Background --
-        let backgroundColor = "transparent";
-        if (hasEvents) {
-            const opacity = 0.35; // Lowered from 45% to 35% as requested
-            if (!selectedSubjectIds || selectedSubjectIds.length === 0) {
-                // "ALL" Filter -> Teal Highlight
-                backgroundColor = `rgba(20, 184, 166, ${opacity})`;
-            } else if (selectedSubjectIds.length === 1) {
-                // Single Subject Filter -> Subject Color Highlight
-                const activeSubjectId = selectedSubjectIds[0];
-                const matchingSubject = allSubjects?.find(s => s.id === activeSubjectId);
-                const baseColor = matchingSubject?.color ?? (activeSubjectId === 'personal' ? "#000000" : null);
-
-                if (baseColor && baseColor.startsWith('#')) {
-                    const r = parseInt(baseColor.slice(1, 3), 16);
-                    const g = parseInt(baseColor.slice(3, 5), 16);
-                    const b = parseInt(baseColor.slice(5, 7), 16);
-                    backgroundColor = `rgba(${r}, ${g}, ${b}, ${opacity})`;
-                } else if (baseColor) {
-                    backgroundColor = baseColor;
-                }
-            }
-        }
+        const isCurrentMonth = date.getMonth() === month;
 
         cells.push(
             <div
-                key={d}
-                className={`calendar-day${hasEvents ? " has-events" : ""}${isToday ? " today" : ""}${allEventsCompleted ? " day-completed" : ""}`}
+                key={dateStr}
+                className={`calendar-day ${!isCurrentMonth ? "other-month" : ""} ${isToday ? "today" : ""}`}
                 onClick={() => onDateClick(date)}
-                title={hasEvents ? `${dayEvents.length} event${dayEvents.length > 1 ? "s" : ""}` : undefined}
-                style={{ position: 'relative' }} // For absolute highlight
             >
-                {/* Highlight Overlay */}
-                <div
-                    className="day-highlight-overlay"
-                    style={{
-                        position: 'absolute',
-                        inset: 0,
-                        backgroundColor,
-                        zIndex: 0,
-                        transition: 'background-color 0.4s ease',
-                        pointerEvents: 'none'
-                    }}
-                />
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', position: 'relative', zIndex: 1 }}>
-                    <span className="day-number">{d}</span>
-                    <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                        {personalEvents.length > 0 && (
-                            <span className={`custom-badge${allPersonalCompleted ? ' personal-done' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                                {allPersonalCompleted && <CheckCircle size={8} />}
-                                custom
-                            </span>
-                        )}
-                        {allEventsCompleted && (
-                            <CheckCircle2 size={14} className="completion-check-icon" />
-                        )}
-                    </div>
+                <div className="day-header">
+                    <span className={`day-number ${isToday ? "today-badge" : ""}`}>
+                        {d}
+                    </span>
                 </div>
 
-                {hasEvents && (
-                    <div className="event-indicators" style={{ position: 'relative', zIndex: 1 }}>
-                        {dayEvents.slice(0, 4).map((e, i) => (
-                            <span
-                                key={i}
-                                className="event-dot"
-                                style={{ backgroundColor: e.subjects?.color ?? (e.is_global === false ? "#000000" : "var(--fg-subtle)") }}
-                            />
-                        ))}
-                        {dayEvents.length > 4 && (
-                            <span className="event-more">+{dayEvents.length - 4}</span>
-                        )}
-                    </div>
-                )}
+                <div className="day-events-container">
+                    {dayEvents.slice(0, 3).map((e) => (
+                        <div
+                            key={e.id}
+                            className="event-pill"
+                            style={{
+                                backgroundColor: `${e.subjects?.color ?? '#94a3b8'}15`,
+                                color: e.subjects?.color ?? 'var(--fg-subtle)',
+                                borderLeft: `3px solid ${e.subjects?.color ?? '#94a3b8'}`
+                            }}
+                        >
+                            <span className="pill-title">{e.title}</span>
+                        </div>
+                    ))}
+                    {dayEvents.length > 3 && (
+                        <div className="event-pill-more">
+                            +{dayEvents.length - 3} more
+                        </div>
+                    )}
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="calendar-container">
-            {/* ── Header ── */}
-            <div className="calendar-header">
-                <h2 className="calendar-month-title">
-                    {MONTH_NAMES[month]} {year}
-                </h2>
+        <div className="calendar-card">
+            {/* ── Calendar Controls ── */}
+            <div className="calendar-controls">
+                <div className="calendar-title-group">
+                    <nav className="breadcrumb">
+                        <span>Dashboard</span>
+                        <span className="separator">/</span>
+                        <span className="active">Calendar</span>
+                    </nav>
+                    <div className="calendar-current-info">
+                        <h2 className="current-month-text">{MONTH_NAMES[month]} {year}</h2>
+                        <div className="mini-nav">
+                            <button className="nav-icon-btn" onClick={prevMonth}>
+                                <span className="material-symbols-outlined">chevron_left</span>
+                            </button>
+                            <button className="nav-today-btn" onClick={goToToday}>Today</button>
+                            <button className="nav-icon-btn" onClick={nextMonth}>
+                                <span className="material-symbols-outlined">chevron_right</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
 
-                <div className="calendar-nav">
-                    <button className="calendar-today-btn" onClick={goToToday}>Today</button>
-                    <button className="calendar-nav-btn" onClick={prevMonth} aria-label="Previous month">
-                        <ChevronLeft size={16} />
-                    </button>
-                    <button className="calendar-nav-btn" onClick={nextMonth} aria-label="Next month">
-                        <ChevronRight size={16} />
-                    </button>
+                <div className="view-switcher">
+                    <div className="pill-group">
+                        <button className="pill-btn disabled">Day</button>
+                        <button className="pill-btn disabled">Week</button>
+                        <button className="pill-btn active">Month</button>
+                    </div>
                 </div>
             </div>
 
             {/* ── Grid ── */}
-            <div className="calendar-grid">
+            <div className="calendar-grid-header">
                 {DAY_NAMES.map(day => (
-                    <div key={day} className="weekday">{day}</div>
+                    <div key={day} className="weekday-label">{day}</div>
                 ))}
+            </div>
+            <div className="calendar-grid">
                 {cells}
             </div>
         </div>

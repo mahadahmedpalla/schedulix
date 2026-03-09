@@ -1,0 +1,55 @@
+.filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.filter-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 1rem;
+    border-radius: var(--radius-full);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--bg-surface);
+    color: var(--fg-subtle);
+    transition: all 0.2s;
+}
+
+.filter-chip:hover {
+    border-color: var(--border-strong);
+    background: var(--bg-raised);
+    color: var(--fg);
+}
+
+.filter-chip.active {
+    background: var(--chip-bg, var(--primary-dim));
+    color: var(--chip-color, var(--primary));
+    border-color: var(--chip-border, var(--primary));
+    box-shadow: var(--shadow-sm);
+}
+
+.chip-icon {
+    font-size: 18px !important;
+}
+
+.chip-color-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--chip-color, var(--primary));
+}
+
+.all-chip.active {
+    background: var(--fg);
+    color: #ffffff;
+    border-color: var(--fg);
+}
+
+.all-chip.active .chip-icon {
+    color: #ffffff;
+}

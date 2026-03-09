@@ -1,0 +1,132 @@
+.dashboard-header {
+    height: 64px;
+    background: var(--bg-sidebar);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    transition: background 0.3s;
+}
+
+.header-search-container {
+    flex: 1;
+    max-width: 480px;
+}
+
+.search-input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--fg-muted);
+    font-size: 20px !important;
+}
+
+.header-search-input {
+    width: 100%;
+    background: var(--bg-raised);
+    border: none;
+    border-radius: var(--radius);
+    padding: 0.625rem 1rem 0.625rem 2.5rem;
+    font-size: 0.875rem;
+    color: var(--fg);
+    transition: all 0.2s;
+    box-shadow: none !important;
+}
+
+.header-search-input:focus {
+    background: var(--bg-sidebar);
+    box-shadow: 0 0 0 2px var(--primary-dim) !important;
+    outline: 2px solid var(--primary-dim);
+}
+
+.header-search-input::placeholder {
+    color: var(--fg-muted);
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.icon-btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius);
+    background: transparent;
+    border: none;
+    color: var(--fg-subtle);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.icon-btn:hover {
+    background: var(--bg-raised);
+    color: var(--fg);
+}
+
+.user-profile-dropdown {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 4px 4px 4px 8px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.user-profile-dropdown:hover {
+    background: var(--bg-raised);
+}
+
+.user-avatar-small {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    background: var(--primary-dim);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dropdown-icon {
+    color: var(--fg-muted);
+    font-size: 18px !important;
+}
+
+.header-admin-tag {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    background: var(--fg);
+    color: #ffffff;
+    padding: 2px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 768px) {
+    .dashboard-header {
+        padding: 0 1rem;
+    }
+
+    .header-search-container {
+        display: none;
+        /* Hide search on mobile header to save space */
+    }
+}
