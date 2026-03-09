@@ -83,7 +83,7 @@ export const Calendar: FC<CalendarProps> = ({ events, onDateClick }) => {
                             }}
                         >
                             <span className="pill-title">
-                                {e.title}
+                                {e.title.length > 32 ? `${e.title.substring(0, 32)}...` : e.title}
                             </span>
                         </div>
                     ))}
