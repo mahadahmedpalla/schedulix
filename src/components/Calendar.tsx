@@ -82,7 +82,9 @@ export const Calendar: FC<CalendarProps> = ({ events, onDateClick }) => {
                                 borderLeft: `3px solid ${e.subjects?.color ?? '#94a3b8'}`
                             }}
                         >
-                            <span className="pill-title">{e.title}</span>
+                            <span className="pill-title">
+                                {e.title.length > 32 ? `${e.title.substring(0, 32)}...` : e.title}
+                            </span>
                         </div>
                     ))}
                     {dayEvents.length > 3 && (
