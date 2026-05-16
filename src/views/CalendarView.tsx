@@ -6,6 +6,7 @@ import { FilterBar } from "../components/FilterBar.tsx";
 import { useEvents } from "../hooks/useEvents.ts";
 import { useAuth } from "../context/AuthContext.tsx";
 import { AddPersonalEventModal } from "../components/AddPersonalEventModal.tsx";
+import { supabase } from "../services/supabase.ts";
 
 export const CalendarView = () => {
     const { user, batch_id, setGuestBatch } = useAuth();
@@ -20,7 +21,7 @@ export const CalendarView = () => {
     // Fetch all batches for the guest selector
     useMemo(() => {
         if (!batch_id) {
-            supabase.from('batches').select('*').order('batch_code').then(({ data }) => {
+            supabase.from('batches').select('*').order('batch_code').then(({ data }: { data: any[] | null }) => {
                 if (data) setAllBatches(data);
             });
         }
