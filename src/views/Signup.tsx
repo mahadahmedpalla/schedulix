@@ -30,12 +30,16 @@ export const Signup = () => {
             return;
         }
 
-        // 2. Create Auth Account
+        // 2. Create Auth Account with Metadata
         const { data: authData, error: authError } = await supabase.auth.signUp({
             email,
             password,
             options: {
-                emailRedirectTo: window.location.origin
+                emailRedirectTo: window.location.origin,
+                data: {
+                    batch_id: batchData.id,
+                    role: "student"
+                }
             }
         });
 
@@ -45,22 +49,8 @@ export const Signup = () => {
             return;
         }
 
-        if (authData.user) {
-            // 3. Create User Role entry with batch_id
-            const { error: roleError } = await supabase
-                .from("user_roles")
-                .insert({
-                    id: authData.user.id,
-                    role: "student",
-                    batch_id: batchData.id
-                });
-
-            if (roleError) {
-                console.error("Role creation error:", roleError);
-                // We don't block success because the user is created, 
-                // but they might need admin help or it might be a trigger conflict if one was added.
-            }
-        }
+        // Note: public.user_roles entry is now handled automatically 
+        // by the database trigger 'on_auth_user_created' using the metadata above.
 
         setSuccess(true);
         setLoading(false);
