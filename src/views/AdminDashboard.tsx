@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useNavigate, Routes, Route, Link, useLocation } from "react-router-dom";
+import { useNavigate, Routes, Route, Link, useLocation, Navigate } from "react-router-dom";
 import { supabase } from "../services/supabase.ts";
 import { useAuth } from "../context/AuthContext.tsx";
 import { Layout } from "../components/Layout.tsx";
