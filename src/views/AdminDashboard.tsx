@@ -7,6 +7,8 @@ import { BookOpen, Settings, PlusCircle, LogOut } from "lucide-react";
 import { SubjectManager } from "./admin/SubjectManager.tsx";
 import { EventTypeManager } from "./admin/EventTypeManager.tsx";
 import { EventUploader } from "./admin/EventUploader.tsx";
+import { ProgramManager } from "./admin/ProgramManager.tsx";
+import { BatchManager } from "./admin/BatchManager.tsx";
 
 const tabs = [
     { name: "Subjects", path: "/admin/subjects", icon: BookOpen },
@@ -138,6 +140,52 @@ export const AdminDashboard = () => {
                                 </Link>
                             );
                         })}
+
+                        {role === 'super_admin' && (
+                            <>
+                                <div style={{ marginTop: '1.5rem', marginBottom: '0.5rem', paddingLeft: '0.75rem', fontSize: '0.7rem', color: 'var(--fg-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    System
+                                </div>
+                                <Link
+                                    to="/admin/programs"
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "0.5rem",
+                                        padding: "0.5rem 0.75rem",
+                                        borderRadius: "var(--radius-sm)",
+                                        fontSize: "0.875rem",
+                                        fontWeight: location.pathname === '/admin/programs' ? 600 : 500,
+                                        color: location.pathname === '/admin/programs' ? "var(--fg)" : "var(--fg-subtle)",
+                                        background: location.pathname === '/admin/programs' ? "var(--bg-raised)" : "transparent",
+                                        textDecoration: "none",
+                                        transition: "all 0.15s",
+                                    }}
+                                >
+                                    <Settings size={16} />
+                                    Programs
+                                </Link>
+                                <Link
+                                    to="/admin/batches"
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "0.5rem",
+                                        padding: "0.5rem 0.75rem",
+                                        borderRadius: "var(--radius-sm)",
+                                        fontSize: "0.875rem",
+                                        fontWeight: location.pathname === '/admin/batches' ? 600 : 500,
+                                        color: location.pathname === '/admin/batches' ? "var(--fg)" : "var(--fg-subtle)",
+                                        background: location.pathname === '/admin/batches' ? "var(--bg-raised)" : "transparent",
+                                        textDecoration: "none",
+                                        transition: "all 0.15s",
+                                    }}
+                                >
+                                    <PlusCircle size={16} />
+                                    Batches
+                                </Link>
+                            </>
+                        )}
                     </nav>
                 </aside>
 
@@ -154,6 +202,12 @@ export const AdminDashboard = () => {
                         <Route path="/subjects" element={<SubjectManager />} />
                         <Route path="/types" element={<EventTypeManager />} />
                         <Route path="/upload" element={<EventUploader />} />
+                        {role === 'super_admin' && (
+                            <>
+                                <Route path="/programs" element={<ProgramManager />} />
+                                <Route path="/batches" element={<BatchManager />} />
+                            </>
+                        )}
                     </Routes>
                 </main>
             </div>
