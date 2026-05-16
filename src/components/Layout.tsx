@@ -74,8 +74,8 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
                             <div className="nav-divider" />
                             <p className="nav-section-title">Global Management</p>
                             <Link
-                                to="/programs"
-                                className={`sidebar-link ${location.pathname === "/programs" ? "active" : ""}`}
+                                to="/admin/programs"
+                                className={`sidebar-link ${location.pathname === "/admin/programs" ? "active" : ""}`}
                             >
                                 <span className="material-symbols-outlined link-icon">
                                     account_tree
@@ -83,8 +83,8 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
                                 <span className="link-label">Programs</span>
                             </Link>
                             <Link
-                                to="/batches"
-                                className={`sidebar-link ${location.pathname === "/batches" ? "active" : ""}`}
+                                to="/admin/batches"
+                                className={`sidebar-link ${location.pathname === "/admin/batches" ? "active" : ""}`}
                             >
                                 <span className="material-symbols-outlined link-icon">
                                     groups
