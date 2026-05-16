@@ -8,13 +8,13 @@ import { useAuth } from "../context/AuthContext.tsx";
 import { AddPersonalEventModal } from "../components/AddPersonalEventModal.tsx";
 
 export const CalendarView = () => {
-    const { user } = useAuth();
+    const { user, batch_id } = useAuth();
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-    // Fetch a wide range of events
-    const { events, subjects, loading, refetchEvents } = useEvents('2024-01-01', '2027-12-31');
+    // Fetch events for the user's specific batch
+    const { events, subjects, loading, refetchEvents } = useEvents('2024-01-01', '2027-12-31', batch_id);
 
     const filteredEvents = useMemo(() => {
         if (selectedSubjects.length === 0) return events;

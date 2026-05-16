@@ -25,7 +25,7 @@ export interface CalendarEvent {
     event_types?: EventType;
 }
 
-export const useEvents = (startDate: string, endDate: string) => {
+export const useEvents = (startDate: string, endDate: string, batchId?: string | null) => {
     const [events, setEvents] = useState<CalendarEvent[]>([]);
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [loading, setLoading] = useState(true);
@@ -35,15 +35,31 @@ export const useEvents = (startDate: string, endDate: string) => {
 
         const { data: { user } } = await supabase.auth.getUser();
 
-        // 1. Fetch Global Events
-        const globalEventsPromise = supabase
+        // 1. Fetch Subjects for this batch
+        let subjectsQuery = supabase.from('subjects').select('*');
+        if (batchId) {
+            subjectsQuery = subjectsQuery.eq('batch_id', batchId);
+        }
+        const subjectsRes = await subjectsQuery;
+        const validSubjectIds = (subjectsRes.data || []).map(s => s.id);
+
+        // 2. Fetch Academic Events for these subjects
+        let academicEventsQuery = supabase
             .from('events')
             .select('*, subjects(*), event_types(*)')
-            .eq('is_global', true)
             .gte('date', startDate)
             .lte('date', endDate);
+        
+        if (batchId && validSubjectIds.length > 0) {
+            // Only fetch events for subjects belonging to this batch
+            academicEventsQuery = academicEventsQuery.in('subject_id', validSubjectIds);
+        } else if (batchId && validSubjectIds.length === 0) {
+            // If batch is selected but has no subjects, we should return no academic events
+            // (Unless we want truly global non-subject events, but usually they are linked)
+            academicEventsQuery = academicEventsQuery.eq('id', '00000000-0000-0000-0000-000000000000'); // Force empty
+        }
 
-        // 2. Fetch Personal Events (only if user is logged in)
+        // 3. Fetch Personal Events (only if user is logged in)
         const personalEventsPromise = user
             ? supabase
                 .from('personal_events')
@@ -52,7 +68,7 @@ export const useEvents = (startDate: string, endDate: string) => {
                 .lte('date', endDate)
             : Promise.resolve({ data: [] as any[], error: null });
 
-        // 3. Fetch Global Completions (only if user is logged in)
+        // 4. Fetch Global Completions (only if user is logged in)
         const globalCompletionsPromise = user
             ? supabase
                 .from('global_event_completions')
@@ -60,19 +76,18 @@ export const useEvents = (startDate: string, endDate: string) => {
                 .eq('user_id', user.id)
             : Promise.resolve({ data: [] as any[], error: null });
 
-        const [globalRes, personalRes, completionsRes, subjectsRes] = await Promise.all([
-            globalEventsPromise,
+        const [academicRes, personalRes, completionsRes] = await Promise.all([
+            academicEventsQuery,
             personalEventsPromise,
             globalCompletionsPromise,
-            supabase.from('subjects').select('*')
         ]);
 
         let allEvents: any[] = [];
         const completedGlobalIds = new Set((completionsRes.data || []).map((c: any) => c.event_id));
 
         // Aggregate and tag
-        if (globalRes.data) {
-            const taggedGlobal = globalRes.data.map((e: any) => ({
+        if (academicRes.data) {
+            const taggedGlobal = academicRes.data.map((e: any) => ({
                 ...e,
                 is_global: true,
                 is_completed: completedGlobalIds.has(e.id)
@@ -81,7 +96,6 @@ export const useEvents = (startDate: string, endDate: string) => {
         }
 
         if (personalRes.data) {
-            // Tag personal events as is_global: false for UI compatibility
             const taggedPersonal = personalRes.data.map((e: any) => ({
                 ...e,
                 is_global: false
@@ -96,7 +110,7 @@ export const useEvents = (startDate: string, endDate: string) => {
 
     useEffect(() => {
         fetchEvents();
-    }, [startDate, endDate]);
+    }, [startDate, endDate, batchId]);
 
     return { events, subjects, loading, refetchEvents: fetchEvents };
 };

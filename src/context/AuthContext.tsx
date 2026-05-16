@@ -5,14 +5,17 @@ import { supabase } from "../services/supabase.ts";
 interface AuthState {
     user: User | null;
     role: "admin" | "student" | null;
+    batch_id: string | null;
     loading: boolean;
 }
 
 const STORAGE_KEY = 'schedulix_auth_role';
+const BATCH_STORAGE_KEY = 'schedulix_auth_batch';
 
 const AuthContext = createContext<AuthState>({
     user: null,
     role: null,
+    batch_id: null,
     loading: true,
 });
 
@@ -20,6 +23,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [role, setRole] = useState<"admin" | "student" | null>(() => {
         return localStorage.getItem(STORAGE_KEY) as "admin" | "student" | null;
+    });
+    const [batchId, setBatchId] = useState<string | null>(() => {
+        return localStorage.getItem(BATCH_STORAGE_KEY);
     });
 
     // Safety Loading: Start as true unless we are POSITIVE we have a cached role.
@@ -34,21 +40,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         try {
             const { data, error } = await supabase
                 .from("user_roles")
-                .select("role")
+                .select("role, batch_id")
                 .eq("id", userId)
                 .single();
 
             if (!error && data) {
                 const userRole = data.role as "admin" | "student";
                 setRole(userRole);
+                setBatchId(data.batch_id);
                 localStorage.setItem(STORAGE_KEY, userRole);
+                if (data.batch_id) {
+                    localStorage.setItem(BATCH_STORAGE_KEY, data.batch_id);
+                } else {
+                    localStorage.removeItem(BATCH_STORAGE_KEY);
+                }
             } else {
                 setRole("student");
+                setBatchId(null);
                 localStorage.setItem(STORAGE_KEY, "student");
+                localStorage.removeItem(BATCH_STORAGE_KEY);
             }
         } catch (err) {
             console.error("Auth Exception:", err);
             setRole("student");
+            setBatchId(null);
         } finally {
             setLoading(false);
             isFetchingRole.current = false;
@@ -93,7 +108,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             if (e === 'SIGNED_OUT') {
                 setUser(null);
                 setRole(null);
+                setBatchId(null);
                 localStorage.removeItem(STORAGE_KEY);
+                localStorage.removeItem(BATCH_STORAGE_KEY);
                 setLoading(false);
             } else if (e === 'SIGNED_IN' || e === 'TOKEN_REFRESHED' || e === 'USER_UPDATED') {
                 if (session?.user) {
@@ -111,7 +128,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }, [fetchRole]);
 
     return (
-        <AuthContext.Provider value={{ user, role, loading }}>
+        <AuthContext.Provider value={{ user, role, batch_id: batchId, loading }}>
             {children}
         </AuthContext.Provider>
     );
