@@ -8,10 +8,12 @@ interface AuthState {
     batch_id: string | null;
     batch_code: string | null;
     loading: boolean;
+    setGuestBatch: (id: string, code: string) => void;
 }
 
 const STORAGE_KEY = 'schedulix_auth_role';
-const BATCH_STORAGE_KEY = 'schedulix_auth_batch';
+const BATCH_STORAGE_KEY = 'schedulix_auth_batch_id';
+const BATCH_CODE_KEY = 'schedulix_auth_batch_code';
 
 const AuthContext = createContext<AuthState>({
     user: null,
@@ -19,24 +21,31 @@ const AuthContext = createContext<AuthState>({
     batch_id: null,
     batch_code: null,
     loading: true,
+    setGuestBatch: () => { },
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [role, setRole] = useState<"super_admin" | "admin" | "student" | null>(() => {
-        return localStorage.getItem(STORAGE_KEY) as "super_admin" | "admin" | "student" | null;
+        return localStorage.getItem(STORAGE_KEY) as any;
     });
     const [batchId, setBatchId] = useState<string | null>(() => {
         return localStorage.getItem(BATCH_STORAGE_KEY);
     });
     const [batchCode, setBatchCode] = useState<string | null>(() => {
-        return localStorage.getItem('schedulix_auth_batch_code');
+        return localStorage.getItem(BATCH_CODE_KEY);
     });
 
-    // Safety Loading: Start as true unless we are POSITIVE we have a cached role.
     const [loading, setLoading] = useState(true);
     const isFetchingRole = useRef(false);
-    const initStarted = useRef(false);
+
+    const setGuestBatch = useCallback((id: string, code: string) => {
+        if (user) return; // Don't override if logged in
+        setBatchId(id);
+        setBatchCode(code);
+        localStorage.setItem(BATCH_STORAGE_KEY, id);
+        localStorage.setItem(BATCH_CODE_KEY, code);
+    }, [user]);
 
     const fetchRole = useCallback(async (userId: string) => {
         if (isFetchingRole.current) return;
@@ -51,34 +60,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     batches (batch_code)
                 `)
                 .eq("id", userId)
-                .single();
+                .maybeSingle(); // Use maybeSingle to avoid 406 errors
 
             if (!error && data) {
-                const userRole = data.role as "super_admin" | "admin" | "student";
-                const batchCode = (data.batches as any)?.batch_code || null;
+                const userRole = data.role as any;
+                const code = (data.batches as any)?.batch_code || null;
                 
                 setRole(userRole);
                 setBatchId(data.batch_id);
-                setBatchCode(batchCode);
+                setBatchCode(code);
                 
                 localStorage.setItem(STORAGE_KEY, userRole);
                 if (data.batch_id) {
                     localStorage.setItem(BATCH_STORAGE_KEY, data.batch_id);
-                    localStorage.setItem('schedulix_auth_batch_code', batchCode || '');
-                } else {
-                    localStorage.removeItem(BATCH_STORAGE_KEY);
-                    localStorage.removeItem('schedulix_auth_batch_code');
+                    localStorage.setItem(BATCH_CODE_KEY, code || '');
                 }
             } else {
+                // If logged in but no role record found, they are a student
+                // but we keep the guest batch if it exists, or set to null
                 setRole("student");
-                setBatchId(null);
                 localStorage.setItem(STORAGE_KEY, "student");
-                localStorage.removeItem(BATCH_STORAGE_KEY);
             }
         } catch (err) {
             console.error("Auth Exception:", err);
-            setRole("student");
-            setBatchId(null);
         } finally {
             setLoading(false);
             isFetchingRole.current = false;
@@ -87,14 +91,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     useEffect(() => {
         let mounted = true;
-        if (initStarted.current) return;
-        initStarted.current = true;
 
         const initialize = async () => {
             try {
-                // 1. Force a session check immediately
                 const { data: { session } } = await supabase.auth.getSession();
-
                 if (!mounted) return;
 
                 if (session?.user) {
@@ -103,7 +103,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 } else {
                     setUser(null);
                     setRole(null);
-                    localStorage.removeItem(STORAGE_KEY);
+                    // Keep guest batch info in state/localstorage
                     setLoading(false);
                 }
             } catch (err) {
@@ -114,22 +114,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         initialize();
 
-        // 2. Continuous listener for state changes (Login, Logout, Token Refresh)
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             if (!mounted) return;
 
-            const e = event as any;
-
-            if (e === 'SIGNED_OUT') {
+            if (event === 'SIGNED_OUT') {
                 setUser(null);
                 setRole(null);
+                // Clear everything on logout including guest batch to ensure fresh state
                 setBatchId(null);
                 setBatchCode(null);
                 localStorage.removeItem(STORAGE_KEY);
                 localStorage.removeItem(BATCH_STORAGE_KEY);
-                localStorage.removeItem('schedulix_auth_batch_code');
+                localStorage.removeItem(BATCH_CODE_KEY);
                 setLoading(false);
-            } else if (e === 'SIGNED_IN' || e === 'TOKEN_REFRESHED' || e === 'USER_UPDATED') {
+            } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
                 if (session?.user) {
                     setUser(session.user);
                     fetchRole(session.user.id);
@@ -141,11 +139,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             mounted = false;
             subscription.unsubscribe();
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [fetchRole]);
 
     return (
-        <AuthContext.Provider value={{ user, role, batch_id: batchId, batch_code: batchCode, loading }}>
+        <AuthContext.Provider value={{ user, role, batch_id: batchId, batch_code: batchCode, loading, setGuestBatch }}>
             {children}
         </AuthContext.Provider>
     );
