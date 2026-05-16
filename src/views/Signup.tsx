@@ -6,6 +6,7 @@ import { Lock, Mail, CalendarDays, ArrowLeft, UserPlus } from "lucide-react";
 export const Signup = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [batchCode, setBatchCode] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
@@ -16,7 +17,21 @@ export const Signup = () => {
         setLoading(true);
         setError(null);
 
-        const { error } = await supabase.auth.signUp({
+        // 1. Validate Batch Code
+        const { data: batchData, error: batchError } = await supabase
+            .from("batches")
+            .select("id")
+            .eq("batch_code", batchCode)
+            .single();
+
+        if (batchError || !batchData) {
+            setError("Invalid Batch Code. Please contact your coordinator.");
+            setLoading(false);
+            return;
+        }
+
+        // 2. Create Auth Account
+        const { data: authData, error: authError } = await supabase.auth.signUp({
             email,
             password,
             options: {
@@ -24,15 +39,31 @@ export const Signup = () => {
             }
         });
 
-        if (error) {
-            setError(error.message);
+        if (authError) {
+            setError(authError.message);
             setLoading(false);
-        } else {
-            setSuccess(true);
-            setLoading(false);
-            // Optional auto-redirect:
-            // setTimeout(() => navigate("/"), 2000);
+            return;
         }
+
+        if (authData.user) {
+            // 3. Create User Role entry with batch_id
+            const { error: roleError } = await supabase
+                .from("user_roles")
+                .insert({
+                    id: authData.user.id,
+                    role: "student",
+                    batch_id: batchData.id
+                });
+
+            if (roleError) {
+                console.error("Role creation error:", roleError);
+                // We don't block success because the user is created, 
+                // but they might need admin help or it might be a trigger conflict if one was added.
+            }
+        }
+
+        setSuccess(true);
+        setLoading(false);
     };
 
     return (
@@ -230,6 +261,51 @@ export const Signup = () => {
                                     }}
                                 />
                             </div>
+                        </div>
+
+                        <div>
+                            <label
+                                style={{
+                                    display: "block",
+                                    fontSize: "0.8125rem",
+                                    fontWeight: 600,
+                                    color: "var(--fg)",
+                                    marginBottom: "0.4rem",
+                                }}
+                            >
+                                Batch Code
+                            </label>
+                            <div style={{ position: "relative" }}>
+                                <span
+                                    className="material-symbols-outlined"
+                                    style={{
+                                        position: "absolute",
+                                        left: "0.75rem",
+                                        top: "50%",
+                                        transform: "translateY(-50%)",
+                                        color: "var(--fg-subtle)",
+                                        fontSize: "18px",
+                                        pointerEvents: "none",
+                                    }}
+                                >
+                                    fingerprint
+                                </span>
+                                <input
+                                    type="text"
+                                    value={batchCode}
+                                    onChange={e => setBatchCode(e.target.value.toUpperCase())}
+                                    placeholder="e.g. 2024FA-BCS-A"
+                                    required
+                                    style={{
+                                        width: "100%",
+                                        padding: "0.5rem 0.75rem 0.5rem 2.25rem",
+                                        textTransform: "uppercase"
+                                    }}
+                                />
+                            </div>
+                            <p style={{ fontSize: "0.65rem", color: "var(--fg-muted)", marginTop: "0.4rem" }}>
+                                Ask your coordinator for your unique batch identifier.
+                            </p>
                         </div>
 
                         <button

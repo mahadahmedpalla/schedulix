@@ -5,7 +5,7 @@ import { Upload, Calendar, Send, CheckCircle, RefreshCw, AlertCircle } from 'luc
 import { useNavigate } from 'react-router-dom';
 
 export const EventUploader = () => {
-    const { user, role, loading: authLoading } = useAuth();
+    const { user, role, batch_id, loading: authLoading } = useAuth();
     const navigate = useNavigate();
     const [subjects, setSubjects] = useState<any[]>([]);
     const [types, setTypes] = useState<any[]>([]);
@@ -32,7 +32,7 @@ export const EventUploader = () => {
     const fetchData = useCallback(async () => {
         if (authLoading) return;
 
-        if (!user || role !== 'admin') {
+        if (!user || (role !== 'admin' && role !== 'super_admin')) {
             setFetching(false);
             setFetchError("Admin session required. Please log in.");
             return;
@@ -41,8 +41,15 @@ export const EventUploader = () => {
         setFetching(true);
         setFetchError(null);
         try {
+            let subjectsQuery = supabase.from('subjects').select('*').order('name');
+            
+            // Filter subjects by batch for Batch Admins
+            if (role === 'admin' && batch_id) {
+                subjectsQuery = subjectsQuery.eq('batch_id', batch_id);
+            }
+
             const [subs, typs] = await Promise.all([
-                supabase.from('subjects').select('*').order('name'),
+                subjectsQuery,
                 supabase.from('event_types').select('*').order('name')
             ]);
 
@@ -57,7 +64,7 @@ export const EventUploader = () => {
         } finally {
             setFetching(false);
         }
-    }, [user, role, authLoading]);
+    }, [user, role, batch_id, authLoading]);
 
     useEffect(() => {
         fetchData();

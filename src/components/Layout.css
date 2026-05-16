@@ -153,6 +153,8 @@
 .user-info {
     flex: 1;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 .user-name {
@@ -164,9 +166,45 @@
     text-overflow: ellipsis;
 }
 
-.user-detail {
+.user-status-group {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin: 0;
+}
+
+.user-detail, .user-batch {
     font-size: 0.65rem;
     color: var(--fg-muted);
+    margin: 0;
+    white-space: nowrap;
+}
+
+.user-batch {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.dot-separator {
+    font-size: 0.75rem;
+    color: var(--border-strong);
+    line-height: 1;
+}
+
+.nav-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 1rem 0.75rem;
+    opacity: 0.5;
+}
+
+.nav-section-title {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--fg-muted);
+    letter-spacing: 0.05em;
+    padding: 0 0.75rem 0.5rem;
     margin: 0;
 }
 

@@ -11,7 +11,7 @@ interface Subject {
 }
 
 export const SubjectManager = () => {
-    const { user, role, loading: authLoading } = useAuth();
+    const { user, role, batch_id, loading: authLoading } = useAuth();
     const navigate = useNavigate();
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [loading, setLoading] = useState(true);
@@ -25,7 +25,7 @@ export const SubjectManager = () => {
         if (authLoading) return;
 
         // Protection: If auth settled but no user/role, show session error.
-        if (!user || role !== 'admin') {
+        if (!user || (role !== 'admin' && role !== 'super_admin')) {
             setLoading(false);
             setError("Your admin session has expired or is invalid. Please log in again.");
             return;
@@ -34,10 +34,17 @@ export const SubjectManager = () => {
         setLoading(true);
         setError(null);
         try {
-            const { data, error: fetchError } = await supabase
+            let query = supabase
                 .from('subjects')
                 .select('*')
                 .order('created_at', { ascending: false });
+
+            // If it's a Batch Admin, only show subjects for their batch
+            if (role === 'admin' && batch_id) {
+                query = query.eq('batch_id', batch_id);
+            }
+
+            const { data, error: fetchError } = await query;
 
             if (fetchError) throw fetchError;
             if (data) setSubjects(data);
@@ -47,7 +54,7 @@ export const SubjectManager = () => {
         } finally {
             setLoading(false);
         }
-    }, [user, role, authLoading]);
+    }, [user, role, batch_id, authLoading]);
 
     useEffect(() => {
         fetchSubjects();
@@ -57,9 +64,19 @@ export const SubjectManager = () => {
         e.preventDefault();
         if (!newName || loading) return;
 
+        // Ensure we have a batch_id if it's a batch admin
+        if (role === 'admin' && !batch_id) {
+            alert("No batch assigned. Please contact Super Admin.");
+            return;
+        }
+
         const { data, error: insertError } = await supabase
             .from('subjects')
-            .insert([{ name: newName, color: newColor }])
+            .insert([{ 
+                name: newName, 
+                color: newColor,
+                batch_id: role === 'admin' ? batch_id : null // Super admins can leave it null for truly global, or we can add a selector
+            }])
             .select();
 
         if (insertError) {

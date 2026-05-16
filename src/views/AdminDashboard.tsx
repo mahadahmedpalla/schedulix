@@ -22,26 +22,24 @@ export const AdminDashboard = () => {
     // REDIRECT LOGIC: Patiently wait for loading to finish.
     useEffect(() => {
         if (!loading) {
-            // We only redirect if we are DEFINITELY not an admin and not loading.
+            // We only redirect if we are DEFINITELY not an admin or super_admin and not loading.
             if (!user && !role) {
                 navigate("/sec/admin/login");
-            } else if (role !== null && role !== "admin") {
-                // If we found a role (student) but it's not admin.
+            } else if (role !== null && role !== "admin" && role !== "super_admin") {
+                // If we found a role (student) but it's not admin/super_admin.
                 supabase.auth.signOut().then(() => navigate("/sec/admin/login"));
             }
         }
     }, [user, role, loading, navigate]);
 
     // INSTANT RENDER: 
-    // If we have the 'admin' role, we show the dashboard IMMEDIATELY.
-    // This removes the blank white screen on reload.
-    // If we are strictly loading and have no role yet, we show a light background.
+    // If we have the 'admin' or 'super_admin' role, we show the dashboard IMMEDIATELY.
     if (loading && !role) {
         return <div style={{ minHeight: '100vh', background: 'var(--bg)' }} />;
     }
 
-    // Protection: If loading finished and we are NOT an admin.
-    if (!loading && role !== "admin") return null;
+    // Protection: If loading finished and we are NOT an admin or super_admin.
+    if (!loading && role !== "admin" && role !== "super_admin") return null;
 
     // While waiting for user object (hydrating in background), we still show the shell.
     // If role is admin, we render the dashboard.

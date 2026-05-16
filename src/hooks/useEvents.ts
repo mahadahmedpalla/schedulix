@@ -36,10 +36,27 @@ export const useEvents = (startDate: string, endDate: string, batchId?: string |
         const { data: { user } } = await supabase.auth.getUser();
 
         // 1. Fetch Subjects for this batch
+        // CRITICAL: If batchId is missing for a logged-in user, we should fetch NOTHING
+        if (!batchId && user) {
+            setEvents([]);
+            setSubjects([]);
+            setLoading(false);
+            return;
+        }
+
         let subjectsQuery = supabase.from('subjects').select('*');
         if (batchId) {
             subjectsQuery = subjectsQuery.eq('batch_id', batchId);
+        } else {
+            // For guests with no batch selected, we might want to show nothing 
+            // or we can allow them to see everything (user's choice).
+            // Let's default to nothing for security.
+            setEvents([]);
+            setSubjects([]);
+            setLoading(false);
+            return;
         }
+
         const subjectsRes = await subjectsQuery;
         const validSubjectIds = (subjectsRes.data || []).map(s => s.id);
 

@@ -12,7 +12,7 @@ interface LayoutProps {
 export const Layout: FC<LayoutProps> = ({ children }) => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { user, role, loading } = useAuth();
+    const { user, role, batch_code, loading } = useAuth();
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
@@ -57,7 +57,7 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
                         </Link>
                     ))}
 
-                    {role === "admin" && (
+                    {(role === "admin" || role === "super_admin") && (
                         <Link
                             to="/admin"
                             className={`sidebar-link admin-link ${location.pathname.startsWith("/admin") ? "active" : ""}`}
@@ -67,6 +67,31 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
                             </span>
                             <span className="link-label">Admin Panel</span>
                         </Link>
+                    )}
+
+                    {role === "super_admin" && (
+                        <>
+                            <div className="nav-divider" />
+                            <p className="nav-section-title">Global Management</p>
+                            <Link
+                                to="/programs"
+                                className={`sidebar-link ${location.pathname === "/programs" ? "active" : ""}`}
+                            >
+                                <span className="material-symbols-outlined link-icon">
+                                    account_tree
+                                </span>
+                                <span className="link-label">Programs</span>
+                            </Link>
+                            <Link
+                                to="/batches"
+                                className={`sidebar-link ${location.pathname === "/batches" ? "active" : ""}`}
+                            >
+                                <span className="material-symbols-outlined link-icon">
+                                    groups
+                                </span>
+                                <span className="link-label">Batches</span>
+                            </Link>
+                        </>
                     )}
                 </nav>
 
@@ -80,7 +105,15 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
                             </div>
                             <div className="user-info">
                                 <p className="user-name">{user.email?.split("@")[0]}</p>
-                                <p className="user-detail">{role || 'Student'}</p>
+                                <div className="user-status-group">
+                                    <p className="user-detail">{role || 'Student'}</p>
+                                    {batch_code && (
+                                        <>
+                                            <span className="dot-separator">·</span>
+                                            <p className="user-batch">{batch_code}</p>
+                                        </>
+                                    )}
+                                </div>
                             </div>
                             <button onClick={handleLogout} className="logout-btn" title="Sign out">
                                 <span className="material-symbols-outlined">logout</span>
