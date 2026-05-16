@@ -4,7 +4,7 @@ import { supabase } from "../services/supabase.ts";
 
 interface AuthState {
     user: User | null;
-    role: "admin" | "student" | null;
+    role: "super_admin" | "admin" | "student" | null;
     batch_id: string | null;
     loading: boolean;
 }
@@ -21,8 +21,8 @@ const AuthContext = createContext<AuthState>({
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
-    const [role, setRole] = useState<"admin" | "student" | null>(() => {
-        return localStorage.getItem(STORAGE_KEY) as "admin" | "student" | null;
+    const [role, setRole] = useState<"super_admin" | "admin" | "student" | null>(() => {
+        return localStorage.getItem(STORAGE_KEY) as "super_admin" | "admin" | "student" | null;
     });
     const [batchId, setBatchId] = useState<string | null>(() => {
         return localStorage.getItem(BATCH_STORAGE_KEY);
@@ -45,7 +45,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 .single();
 
             if (!error && data) {
-                const userRole = data.role as "admin" | "student";
+                const userRole = data.role as "super_admin" | "admin" | "student";
                 setRole(userRole);
                 setBatchId(data.batch_id);
                 localStorage.setItem(STORAGE_KEY, userRole);
