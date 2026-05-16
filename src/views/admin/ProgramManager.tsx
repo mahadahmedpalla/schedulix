@@ -93,12 +93,29 @@ export const ProgramManager = () => {
             <div className="manager-header">
                 <div>
                     <h1>Program Management</h1>
-                    <p>Define academic programs and departments.</p>
+                    <p>Define and oversee the academic programs and departments across the institution.</p>
                 </div>
                 <button className="btn btn-primary" onClick={() => { resetForm(); setIsModalOpen(true); }}>
                     <span className="material-symbols-outlined">add</span>
-                    Add Program
+                    Create Program
                 </button>
+            </div>
+
+            <div className="stats-grid">
+                <div className="stat-card premium-glass">
+                    <span className="material-symbols-outlined stat-icon">account_tree</span>
+                    <div className="stat-info">
+                        <span className="stat-value">{programs.length}</span>
+                        <span className="stat-label">Total Programs</span>
+                    </div>
+                </div>
+                <div className="stat-card premium-glass">
+                    <span className="material-symbols-outlined stat-icon">account_balance</span>
+                    <div className="stat-info">
+                        <span className="stat-value">{new Set(programs.map(p => p.department_name)).size}</span>
+                        <span className="stat-label">Active Departments</span>
+                    </div>
+                </div>
             </div>
 
             <div className="manager-content">

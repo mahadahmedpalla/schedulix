@@ -135,12 +135,36 @@ export const BatchManager = () => {
             <div className="manager-header">
                 <div>
                     <h1>Batch Management</h1>
-                    <p>Create and manage academic cohorts for different programs.</p>
+                    <p>Orchestrate academic cohorts and maintain unique identification across programs.</p>
                 </div>
                 <button className="btn btn-primary" onClick={() => { resetForm(); setIsModalOpen(true); }}>
-                    <span className="material-symbols-outlined">add</span>
-                    Create Batch
+                    <span className="material-symbols-outlined">group_add</span>
+                    Initialize Batch
                 </button>
+            </div>
+
+            <div className="stats-grid">
+                <div className="stat-card premium-glass">
+                    <span className="material-symbols-outlined stat-icon">groups</span>
+                    <div className="stat-info">
+                        <span className="stat-value">{batches.length}</span>
+                        <span className="stat-label">Total Batches</span>
+                    </div>
+                </div>
+                <div className="stat-card premium-glass">
+                    <span className="material-symbols-outlined stat-icon">school</span>
+                    <div className="stat-info">
+                        <span className="stat-value">{new Set(batches.map(b => b.program_id)).size}</span>
+                        <span className="stat-label">Programs Represented</span>
+                    </div>
+                </div>
+                <div className="stat-card premium-glass">
+                    <span className="material-symbols-outlined stat-icon">event_note</span>
+                    <div className="stat-info">
+                        <span className="stat-value">{batches.filter(b => b.current_semester <= 2).length}</span>
+                        <span className="stat-label">Freshman Cohorts</span>
+                    </div>
+                </div>
             </div>
 
             <div className="manager-content">

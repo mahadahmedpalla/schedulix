@@ -199,15 +199,16 @@ export const AdminDashboard = () => {
                 >
                     <Routes>
                         <Route path="/" element={<SubjectManager />} />
-                        <Route path="/subjects" element={<SubjectManager />} />
-                        <Route path="/types" element={<EventTypeManager />} />
-                        <Route path="/upload" element={<EventUploader />} />
+                        <Route path="subjects" element={<SubjectManager />} />
+                        <Route path="types" element={<EventTypeManager />} />
+                        <Route path="upload" element={<EventUploader />} />
                         {role === 'super_admin' && (
                             <>
-                                <Route path="/programs" element={<ProgramManager />} />
-                                <Route path="/batches" element={<BatchManager />} />
+                                <Route path="programs" element={<ProgramManager />} />
+                                <Route path="batches" element={<BatchManager />} />
                             </>
                         )}
+                        <Route path="*" element={<Navigate to="subjects" replace />} />
                     </Routes>
                 </main>
             </div>
