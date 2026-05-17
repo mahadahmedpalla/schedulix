@@ -44,7 +44,7 @@ export const CrRequestsView = () => {
         setLoading(true);
         setError(null);
         try {
-            // Fetch requests and join subject details and student profile emails
+            // Fetch requests and join subject details
             let query = supabase
                 .from("student_subject_requests")
                 .select(`
@@ -54,16 +54,13 @@ export const CrRequestsView = () => {
                     status,
                     notes,
                     created_at,
-                    subjects:subject_id (
+                    subjects:subject_id!inner (
                         id,
                         name,
                         color,
                         batches:batch_id (
                             batch_code
                         )
-                    ),
-                    student_profiles:student_id (
-                        email
                     )
                 `)
                 .eq("status", "pending")
@@ -78,30 +75,54 @@ export const CrRequestsView = () => {
 
             if (fetchError) throw fetchError;
 
-            // Safely map array relations
-            const mappedData: RequestItem[] = (data || []).map((item: any) => {
-                const subj = Array.isArray(item.subjects) ? item.subjects[0] : item.subjects;
-                const batch = subj ? (Array.isArray(subj.batches) ? subj.batches[0] : subj.batches) : null;
-                const profile = Array.isArray(item.student_profiles) ? item.student_profiles[0] : item.student_profiles;
+            let mappedData: RequestItem[] = [];
 
-                return {
-                    id: item.id,
-                    student_id: item.student_id,
-                    subject_id: item.subject_id,
-                    status: item.status,
-                    notes: item.notes,
-                    created_at: item.created_at,
-                    subjects: subj ? {
-                        id: subj.id,
-                        name: subj.name,
-                        color: subj.color,
-                        batches: batch
-                    } : null,
-                    student_profiles: profile ? {
-                        email: profile.email
-                    } : null
-                };
-            });
+            if (data && data.length > 0) {
+                // Collect unique student ids to fetch their emails from student_profiles view
+                const studentIds = Array.from(new Set(data.map((item: any) => item.student_id)));
+
+                // Fetch student emails from the student_profiles view
+                const { data: profileData, error: profileError } = await supabase
+                    .from("student_profiles")
+                    .select("id, email")
+                    .in("id", studentIds);
+
+                if (profileError) {
+                    console.error("Error fetching student profiles:", profileError);
+                }
+
+                const profileMap = new Map<string, string>();
+                if (profileData) {
+                    profileData.forEach((p: any) => {
+                        profileMap.set(p.id, p.email);
+                    });
+                }
+
+                // Map data safely
+                mappedData = data.map((item: any) => {
+                    const subj = Array.isArray(item.subjects) ? item.subjects[0] : item.subjects;
+                    const batch = subj ? (Array.isArray(subj.batches) ? subj.batches[0] : subj.batches) : null;
+                    const email = profileMap.get(item.student_id) || "Unknown Student";
+
+                    return {
+                        id: item.id,
+                        student_id: item.student_id,
+                        subject_id: item.subject_id,
+                        status: item.status,
+                        notes: item.notes,
+                        created_at: item.created_at,
+                        subjects: subj ? {
+                            id: subj.id,
+                            name: subj.name,
+                            color: subj.color,
+                            batches: batch
+                        } : null,
+                        student_profiles: {
+                            email
+                        }
+                    };
+                });
+            }
 
             setRequests(mappedData);
         } catch (err: any) {
