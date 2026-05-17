@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Layout } from "../components/Layout.tsx";
 import { Calendar } from "../components/Calendar.tsx";
 import { EventDetailPanel } from "../components/EventDetailPanel.tsx";
@@ -6,26 +6,24 @@ import { FilterBar } from "../components/FilterBar.tsx";
 import { useEvents } from "../hooks/useEvents.ts";
 import { useAuth } from "../context/AuthContext.tsx";
 import { AddPersonalEventModal } from "../components/AddPersonalEventModal.tsx";
-import { supabase } from "../services/supabase.ts";
+import { useNavigate } from "react-router-dom";
 
 export const CalendarView = () => {
-    const { user, batch_id, setGuestBatch } = useAuth();
+    const { user, batch_id, loading: authLoading } = useAuth();
+    const navigate = useNavigate();
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-    const [allBatches, setAllBatches] = useState<any[]>([]);
+
+    // Enforce Authentication: Redirect unsigned-in users
+    useEffect(() => {
+        if (!authLoading && !user) {
+            navigate("/login");
+        }
+    }, [user, authLoading, navigate]);
 
     // Fetch events for the user's specific batch
-    const { events, subjects, loading, refetchEvents } = useEvents('2024-01-01', '2027-12-31', batch_id);
-
-    // Fetch all batches for the guest selector
-    useMemo(() => {
-        if (!batch_id) {
-            supabase.from('batches').select('*').order('batch_code').then(({ data }: { data: any[] | null }) => {
-                if (data) setAllBatches(data);
-            });
-        }
-    }, [batch_id]);
+    const { events, subjects, loading: eventsLoading, refetchEvents } = useEvents('2024-01-01', '2027-12-31', batch_id);
 
     const filteredEvents = useMemo(() => {
         if (selectedSubjects.length === 0) return events;
@@ -41,13 +39,52 @@ export const CalendarView = () => {
         return events.filter(e => e.date === dateStr);
     }, [events, selectedDate]);
 
+    // Render loading state during authentication check
+    if (authLoading) {
+        return (
+            <Layout>
+                <div className="skeleton-calendar">
+                    <div className="spinner" />
+                    <p>Authenticating your session...</p>
+                </div>
+            </Layout>
+        );
+    }
+
+    // Gated View: If logged in but no batch assigned
+    if (!batch_id) {
+        return (
+            <Layout>
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minHeight: '60vh',
+                    gap: '1rem',
+                    textAlign: 'center',
+                    color: 'var(--fg-muted)'
+                }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '3rem', color: 'var(--primary)' }}>
+                        warning
+                    </span>
+                    <h2 style={{ fontWeight: 600, color: 'var(--fg)' }}>No Batch Linked</h2>
+                    <p style={{ fontSize: '0.9rem' }}>
+                        Your account is not linked to any academic batch.<br />
+                        Please contact your coordinator or super admin to assign your cohort.
+                    </p>
+                </div>
+            </Layout>
+        );
+    }
+
     return (
         <Layout>
             <div className="dashboard-content-wrapper">
                 {/* ── Top Bar (Filters & Quick Actions) ── */}
                 <div className="dashboard-top-bar">
                     <div className="filters-section">
-                        {!loading && subjects.length > 0 && (
+                        {!eventsLoading && subjects.length > 0 && (
                             <FilterBar
                                 subjects={subjects}
                                 selectedSubjects={selectedSubjects}
@@ -58,45 +95,22 @@ export const CalendarView = () => {
 
                     <div className="quick-actions">
                         <button
-                            onClick={() => user ? setIsAddModalOpen(true) : (window.location.href = '/login')}
-                            className={`btn ${user ? "btn-primary" : "btn-outline"}`}
+                            onClick={() => setIsAddModalOpen(true)}
+                            className="btn btn-primary"
                             style={{ gap: "0.5rem" }}
                         >
                             <span className="material-symbols-outlined">add</span>
-                            <span>{user ? "Add Event" : "Sign in to add events"}</span>
+                            <span>Add Event</span>
                         </button>
                     </div>
                 </div>
 
                 {/* ── Calendar Section ── */}
                 <div className="dashboard-calendar-section">
-                    {loading ? (
+                    {eventsLoading ? (
                         <div className="skeleton-calendar">
                             <div className="spinner" />
-                            <p>Connecting to Schedulix...</p>
-                        </div>
-                    ) : !batch_id ? (
-                        <div className="batch-selector-overlay">
-                            <div className="batch-selector-card premium-glass fade-in">
-                                <span className="material-symbols-outlined selector-icon">groups</span>
-                                <h2>Select Your Batch</h2>
-                                <p>Pick a batch to view its academic schedule and events.</p>
-                                <div className="batch-grid">
-                                    {allBatches.map(b => (
-                                        <button 
-                                            key={b.id} 
-                                            className="batch-item-btn"
-                                            onClick={() => setGuestBatch(b.id, b.batch_code)}
-                                        >
-                                            <span className="batch-name">{b.batch_code}</span>
-                                            <span className="batch-meta">Semester {b.current_semester}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                                <div className="selector-footer">
-                                    <p>Are you a student? <a href="/login">Sign in</a> for personalized events.</p>
-                                </div>
-                            </div>
+                            <p>Loading academic events...</p>
                         </div>
                     ) : (
                         <Calendar
