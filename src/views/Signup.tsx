@@ -49,8 +49,21 @@ export const Signup = () => {
             return;
         }
 
-        // Note: public.user_roles entry is now handled automatically 
-        // by the database trigger 'on_auth_user_created' using the metadata above.
+        // Note: public.user_roles entry is handled automatically by the database trigger,
+        // but we also perform a client-side upsert as a robust backup to guarantee immediate linkage.
+        if (authData.user) {
+            try {
+                await supabase
+                    .from("user_roles")
+                    .upsert({
+                        id: authData.user.id,
+                        role: "student",
+                        batch_id: batchData.id
+                    });
+            } catch (err) {
+                console.warn("Client-side role upsert skipped (handled by DB trigger):", err);
+            }
+        }
 
         setSuccess(true);
         setLoading(false);
