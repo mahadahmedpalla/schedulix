@@ -20,13 +20,27 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
 
         const fetchPendingCount = async () => {
             try {
+                // For batch admins: first get their batch's subject IDs, then count by those
+                let subjectIds: string[] | null = null;
+                if (role === "admin" && batch_id) {
+                    const { data: subjects } = await supabase
+                        .from("subjects")
+                        .select("id")
+                        .eq("batch_id", batch_id);
+                    subjectIds = subjects ? subjects.map((s: any) => s.id) : [];
+                    if (subjectIds.length === 0) {
+                        setPendingCount(0);
+                        return;
+                    }
+                }
+
                 let query = supabase
                     .from("student_subject_requests")
-                    .select("id, subjects!inner(batch_id)", { count: "exact", head: true })
+                    .select("id", { count: "exact", head: true })
                     .eq("status", "pending");
 
-                if (role === "admin" && batch_id) {
-                    query = query.eq("subjects.batch_id", batch_id);
+                if (subjectIds) {
+                    query = query.in("subject_id", subjectIds);
                 }
 
                 const { count, error } = await query;
