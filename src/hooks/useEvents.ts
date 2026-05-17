@@ -35,44 +35,48 @@ export const useEvents = (startDate: string, endDate: string, batchId?: string |
 
         const { data: { user } } = await supabase.auth.getUser();
 
-        // 1. Fetch Subjects for this batch
-        // CRITICAL: If batchId is missing for a logged-in user, we should fetch NOTHING
-        if (!batchId && user) {
+        // 1. Fetch Active Subject Subscriptions for the student
+        if (!user) {
             setEvents([]);
             setSubjects([]);
             setLoading(false);
             return;
         }
 
-        let subjectsQuery = supabase.from('subjects').select('*');
-        if (batchId) {
-            subjectsQuery = subjectsQuery.eq('batch_id', batchId);
-        } else {
-            // For guests with no batch selected, we might want to show nothing 
-            // or we can allow them to see everything (user's choice).
-            // Let's default to nothing for security.
+        // Fetch subjects that this student is actively subscribed to
+        const { data: subsData, error: subsError } = await supabase
+            .from('student_subject_subscriptions')
+            .select('subject_id, subjects(*)')
+            .eq('student_id', user.id)
+            .eq('is_active', true);
+
+        if (subsError) {
+            console.error("Error fetching subject subscriptions:", subsError);
             setEvents([]);
             setSubjects([]);
             setLoading(false);
             return;
         }
 
-        const subjectsRes = await subjectsQuery;
-        const validSubjectIds = (subjectsRes.data || []).map(s => s.id);
+        // Extract subjects and valid IDs
+        const subscribedSubjects = (subsData || [])
+            .map(sub => sub.subjects)
+            .filter((s): s is any => s !== null);
 
-        // 2. Fetch Academic Events for these subjects
+        const validSubjectIds = subscribedSubjects.map(s => s.id);
+
+        // 2. Fetch Academic Events for these active subjects
         let academicEventsQuery = supabase
             .from('events')
             .select('*, subjects(*), event_types(*)')
             .gte('date', startDate)
             .lte('date', endDate);
         
-        if (batchId && validSubjectIds.length > 0) {
-            // Only fetch events for subjects belonging to this batch
+        if (validSubjectIds.length > 0) {
+            // Only fetch events for subjects the student is actively subscribed to
             academicEventsQuery = academicEventsQuery.in('subject_id', validSubjectIds);
-        } else if (batchId && validSubjectIds.length === 0) {
-            // If batch is selected but has no subjects, we should return no academic events
-            // (Unless we want truly global non-subject events, but usually they are linked)
+        } else {
+            // If no active subscriptions, return no academic events
             academicEventsQuery = academicEventsQuery.eq('id', '00000000-0000-0000-0000-000000000000'); // Force empty
         }
 
@@ -121,7 +125,7 @@ export const useEvents = (startDate: string, endDate: string, batchId?: string |
         }
 
         setEvents(allEvents);
-        if (subjectsRes.data) setSubjects(subjectsRes.data);
+        setSubjects(subscribedSubjects);
         setLoading(false);
     };
 

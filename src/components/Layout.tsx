@@ -24,7 +24,7 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
         { label: "Calendar", path: "/", icon: "calendar_month" },
         { label: "Courses", path: "/courses", icon: "menu_book", disabled: true },
         { label: "Tasks", path: "/tasks", icon: "task_alt", disabled: true },
-        { label: "Settings", path: "/settings", icon: "settings", disabled: true },
+        { label: "Settings", path: "/settings", icon: "settings" },
     ];
 
     return (
