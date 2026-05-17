@@ -1,14 +1,15 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Routes, Route, Link, useLocation, Navigate } from "react-router-dom";
 import { supabase } from "../services/supabase.ts";
 import { useAuth } from "../context/AuthContext.tsx";
 import { Layout } from "../components/Layout.tsx";
-import { BookOpen, Settings, PlusCircle, LogOut } from "lucide-react";
+import { BookOpen, Settings, PlusCircle, LogOut, ClipboardCheck } from "lucide-react";
 import { SubjectManager } from "./admin/SubjectManager.tsx";
 import { EventTypeManager } from "./admin/EventTypeManager.tsx";
 import { EventUploader } from "./admin/EventUploader.tsx";
 import { ProgramManager } from "./admin/ProgramManager.tsx";
 import { BatchManager } from "./admin/BatchManager.tsx";
+import { CrRequestsView } from "./admin/CrRequestsView.tsx";
 
 const tabs = [
     { name: "Subjects", path: "/admin/subjects", icon: BookOpen },
@@ -17,9 +18,41 @@ const tabs = [
 ];
 
 export const AdminDashboard = () => {
-    const { user, role, loading } = useAuth();
+    const { user, role, batch_id, loading } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
+    const [pendingCount, setPendingCount] = useState(0);
+
+    // Fetch pending request count
+    useEffect(() => {
+        if (loading || !user || (role !== "admin" && role !== "super_admin")) return;
+
+        const fetchPendingCount = async () => {
+            try {
+                let query = supabase
+                    .from("student_subject_requests")
+                    .select("id, subjects!inner(batch_id)", { count: "exact", head: true })
+                    .eq("status", "pending");
+
+                if (role === "admin" && batch_id) {
+                    query = query.eq("subjects.batch_id", batch_id);
+                }
+
+                const { count, error } = await query;
+                if (!error && count !== null) {
+                    setPendingCount(count);
+                }
+            } catch (err) {
+                console.error("Error fetching pending requests count:", err);
+            }
+        };
+
+        fetchPendingCount();
+
+        // Refresh count every 15 seconds to keep dashboard live and reactive
+        const interval = setInterval(fetchPendingCount, 15000);
+        return () => clearInterval(interval);
+    }, [user, role, batch_id, loading]);
 
     // REDIRECT LOGIC: Patiently wait for loading to finish.
     useEffect(() => {
@@ -141,6 +174,43 @@ export const AdminDashboard = () => {
                             );
                         })}
 
+                        {/* Dynamic Course Requests with live badge notification */}
+                        <Link
+                            to="/admin/requests"
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                padding: "0.5rem 0.75rem",
+                                borderRadius: "var(--radius-sm)",
+                                fontSize: "0.875rem",
+                                fontWeight: location.pathname === "/admin/requests" ? 600 : 500,
+                                color: location.pathname === "/admin/requests" ? "var(--fg)" : "var(--fg-subtle)",
+                                background: location.pathname === "/admin/requests" ? "var(--bg-raised)" : "transparent",
+                                textDecoration: "none",
+                                transition: "all 0.15s",
+                            }}
+                        >
+                            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                                <ClipboardCheck size={16} strokeWidth={location.pathname === "/admin/requests" ? 2.5 : 2} />
+                                <span>Course Requests</span>
+                            </div>
+                            {pendingCount > 0 && (
+                                <span style={{
+                                    background: "var(--danger)",
+                                    color: "white",
+                                    fontSize: "0.75rem",
+                                    fontWeight: 700,
+                                    padding: "0.1rem 0.4rem",
+                                    borderRadius: "1rem",
+                                    minWidth: "18px",
+                                    textAlign: "center"
+                                }}>
+                                    {pendingCount}
+                                </span>
+                            )}
+                        </Link>
+
                         {role === 'super_admin' && (
                             <>
                                 <div style={{ marginTop: '1.5rem', marginBottom: '0.5rem', paddingLeft: '0.75rem', fontSize: '0.7rem', color: 'var(--fg-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -202,6 +272,7 @@ export const AdminDashboard = () => {
                         <Route path="subjects" element={<SubjectManager />} />
                         <Route path="types" element={<EventTypeManager />} />
                         <Route path="upload" element={<EventUploader />} />
+                        <Route path="requests" element={<CrRequestsView />} />
                         {role === 'super_admin' && (
                             <>
                                 <Route path="programs" element={<ProgramManager />} />

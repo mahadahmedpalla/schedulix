@@ -1,4 +1,4 @@
-import type { FC, ReactNode } from "react";
+import { useState, useEffect, type FC, type ReactNode } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.tsx";
 import { supabase } from "../services/supabase.ts";
@@ -12,7 +12,36 @@ interface LayoutProps {
 export const Layout: FC<LayoutProps> = ({ children }) => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { user, role, batch_code, loading } = useAuth();
+    const { user, role, batch_id, batch_code, loading } = useAuth();
+    const [pendingCount, setPendingCount] = useState(0);
+
+    useEffect(() => {
+        if (loading || !user || (role !== "admin" && role !== "super_admin")) return;
+
+        const fetchPendingCount = async () => {
+            try {
+                let query = supabase
+                    .from("student_subject_requests")
+                    .select("id, subjects!inner(batch_id)", { count: "exact", head: true })
+                    .eq("status", "pending");
+
+                if (role === "admin" && batch_id) {
+                    query = query.eq("subjects.batch_id", batch_id);
+                }
+
+                const { count, error } = await query;
+                if (!error && count !== null) {
+                    setPendingCount(count);
+                }
+            } catch (err) {
+                console.error("Error fetching pending count:", err);
+            }
+        };
+
+        fetchPendingCount();
+        const interval = setInterval(fetchPendingCount, 15000);
+        return () => clearInterval(interval);
+    }, [user, role, batch_id, loading]);
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
@@ -61,11 +90,29 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
                         <Link
                             to="/admin"
                             className={`sidebar-link admin-link ${location.pathname.startsWith("/admin") ? "active" : ""}`}
+                            style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
                         >
-                            <span className="material-symbols-outlined link-icon">
-                                shield_person
-                            </span>
-                            <span className="link-label">Admin Panel</span>
+                            <div style={{ display: "flex", alignItems: "center" }}>
+                                <span className="material-symbols-outlined link-icon">
+                                    shield_person
+                                </span>
+                                <span className="link-label">Admin Panel</span>
+                            </div>
+                            {pendingCount > 0 && (
+                                <span style={{
+                                    background: "var(--danger)",
+                                    color: "white",
+                                    fontSize: "0.7rem",
+                                    fontWeight: 700,
+                                    padding: "0.1rem 0.4rem",
+                                    borderRadius: "1rem",
+                                    minWidth: "18px",
+                                    textAlign: "center",
+                                    marginRight: "0.5rem"
+                                }}>
+                                    {pendingCount}
+                                </span>
+                            )}
                         </Link>
                     )}
 

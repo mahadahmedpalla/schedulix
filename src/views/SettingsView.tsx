@@ -40,6 +40,8 @@ export const SettingsView = () => {
     const [selectedBatchId, setSelectedBatchId] = useState<string>("");
     const [batchSubjects, setBatchSubjects] = useState<Subject[]>([]);
     const [loadingSubs, setLoadingSubs] = useState(true);
+    const [requests, setRequests] = useState<any[]>([]);
+    const [loadingReqs, setLoadingReqs] = useState(true);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
 
     // Enforce Authentication
@@ -76,6 +78,31 @@ export const SettingsView = () => {
         setLoadingSubs(false);
     };
 
+    // Fetch student requests (Pending/Rejected repeat link requests)
+    const fetchRequests = async () => {
+        if (!user) return;
+        setLoadingReqs(true);
+        const { data, error } = await supabase
+            .from("student_subject_requests")
+            .select("id, subject_id, status, notes, subjects(id, name, color, batch_id, batches(batch_code))")
+            .eq("student_id", user.id);
+
+        if (error) {
+            console.error("Error fetching requests:", error);
+        } else {
+            const mappedData = (data || []).map((item: any) => ({
+                id: item.id,
+                subject_id: item.subject_id,
+                status: item.status,
+                notes: item.notes,
+                subjects: Array.isArray(item.subjects) ? item.subjects[0] : item.subjects
+            })).filter(item => item.subjects !== null && item.subjects !== undefined);
+            
+            setRequests(mappedData);
+        }
+        setLoadingReqs(false);
+    };
+
     // Fetch other batches for repeating/cross courses
     const fetchBatches = async () => {
         const { data, error } = await supabase
@@ -95,6 +122,7 @@ export const SettingsView = () => {
     useEffect(() => {
         if (user) {
             fetchSubscriptions();
+            fetchRequests();
             fetchBatches();
         }
     }, [user, batch_id]);
@@ -136,26 +164,48 @@ export const SettingsView = () => {
         setActionLoading(null);
     };
 
-    // Subscribe to a repeating course (junior cohort)
-    const handleSubscribeToSubject = async (subject: Subject) => {
+    // Submit a request to take a repeating course (CR must approve)
+    const handleRequestSubject = async (subject: Subject) => {
         if (!user) return;
         setActionLoading(subject.id);
         const { error } = await supabase
-            .from("student_subject_subscriptions")
-            .upsert({
+            .from("student_subject_requests")
+            .insert({
                 student_id: user.id,
                 subject_id: subject.id,
-                is_active: true
-            }, {
-                onConflict: "student_id, subject_id"
+                status: "pending"
             });
 
         if (error) {
-            console.error("Error subscribing to course:", error);
+            console.error("Error submitting subject request:", error);
         } else {
-            await fetchSubscriptions();
+            await fetchRequests();
             // Remove from the selectable list
             setBatchSubjects(prev => prev.filter(s => s.id !== subject.id));
+        }
+        setActionLoading(null);
+    };
+
+    // Cancel a pending request or delete a rejected log
+    const handleCancelRequest = async (requestId: string) => {
+        setActionLoading(requestId);
+        const { error } = await supabase
+            .from("student_subject_requests")
+            .delete()
+            .eq("id", requestId);
+
+        if (error) {
+            console.error("Error deleting request:", error);
+        } else {
+            await fetchRequests();
+            // Re-fetch subjects if a batch is selected to refresh available selections
+            if (selectedBatchId) {
+                const { data } = await supabase
+                    .from("subjects")
+                    .select("*")
+                    .eq("batch_id", selectedBatchId);
+                setBatchSubjects(data || []);
+            }
         }
         setActionLoading(null);
     };
@@ -185,13 +235,15 @@ export const SettingsView = () => {
         sub => sub.subjects && sub.subjects.batch_id !== batch_id
     );
 
-    // Filter selectable subjects to exclude already subscribed ones
+    // Filter selectable subjects to exclude already subscribed OR requested ones
     const subscribedSubjectIds = new Set(subscriptions.map(s => s.subject_id));
+    const requestedSubjectIds = new Set(requests.map(r => r.subject_id));
     const availableBatchSubjects = batchSubjects.filter(
-        s => !subscribedSubjectIds.has(s.id)
+        s => !subscribedSubjectIds.has(s.id) && !requestedSubjectIds.has(s.id)
     );
 
-    if (authLoading || loadingSubs) {
+
+    if (authLoading || loadingSubs || loadingReqs) {
         return (
             <Layout>
                 <div style={{
@@ -216,7 +268,7 @@ export const SettingsView = () => {
                 {/* ── Dashboard Header ── */}
                 <div style={{ borderBottom: "1px solid var(--border)", paddingBottom: "1.5rem" }}>
                     <h2 style={{ fontSize: "2rem", fontWeight: 700, color: "var(--fg)", marginBottom: "0.25rem" }}>Academic Settings</h2>
-                    <p style={{ color: "var(--fg-muted)", fontSize: "0.9rem" }}>Manage your timetable preferences, drop courses, or link repeating junior subjects.</p>
+                    <p style={{ color: "var(--fg-muted)", fontSize: "0.9rem" }}>Manage your timetable preferences, drop courses, or request to link repeating subjects.</p>
                 </div>
 
                 {/* ── Student Profile Header Card ── */}
@@ -322,10 +374,10 @@ export const SettingsView = () => {
                             <div className="surface" style={{ padding: "2rem", borderRadius: "1rem", border: "1px solid var(--border)" }}>
                                 <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.5rem" }}>
                                     <span className="material-symbols-outlined" style={{ color: "var(--primary)", fontSize: "1.75rem" }}>library_add_check</span>
-                                    <h4 style={{ fontSize: "1.15rem", fontWeight: 600, color: "var(--fg)" }}>Repeating / Custom Courses</h4>
+                                    <h4 style={{ fontSize: "1.15rem", fontWeight: 600, color: "var(--fg)" }}>Repeating & Cross Courses (Approved)</h4>
                                 </div>
                                 <p style={{ color: "var(--fg-muted)", fontSize: "0.85rem", marginBottom: "1.5rem" }}>
-                                    Courses you are taking from other cohorts or junior batches.
+                                    Courses from other cohorts/junior batches officially approved by the CR.
                                 </p>
 
                                 <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
@@ -354,7 +406,7 @@ export const SettingsView = () => {
                                                         {sub.subjects?.name}
                                                     </p>
                                                     <span style={{ fontSize: "0.75rem", color: "var(--fg-muted)" }}>
-                                                        Repeat Course (Active Timeline)
+                                                        Approved Repeat Course (Active Timeline)
                                                     </span>
                                                 </div>
                                             </div>
@@ -375,6 +427,97 @@ export const SettingsView = () => {
                                 </div>
                             </div>
                         )}
+
+                        {/* ── Sub-Column: Course Access Requests (Pending & Rejected) ── */}
+                        {requests.length > 0 && (
+                            <div className="surface" style={{ padding: "2rem", borderRadius: "1rem", border: "1px solid var(--border)" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.5rem" }}>
+                                    <span className="material-symbols-outlined" style={{ color: "var(--primary)", fontSize: "1.75rem" }}>hourglass_empty</span>
+                                    <h4 style={{ fontSize: "1.15rem", fontWeight: 600, color: "var(--fg)" }}>Link Requests</h4>
+                                </div>
+                                <p style={{ color: "var(--fg-muted)", fontSize: "0.85rem", marginBottom: "1.5rem" }}>
+                                    Course link requests submitted for approval by Class Representatives (CRs).
+                                </p>
+
+                                <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                                    {requests.map((req) => (
+                                        <div 
+                                            key={req.id} 
+                                            style={{ 
+                                                display: "flex", 
+                                                flexDirection: "column",
+                                                gap: "0.75rem",
+                                                padding: "1rem",
+                                                borderRadius: "0.75rem",
+                                                background: req.status === "pending" ? "rgba(251, 191, 36, 0.03)" : "rgba(239, 68, 68, 0.03)",
+                                                border: `1px solid ${req.status === "pending" ? "rgba(251, 191, 36, 0.15)" : "rgba(239, 68, 68, 0.15)"}`
+                                            }}
+                                        >
+                                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                                <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                                                    <div style={{ 
+                                                        width: "12px", 
+                                                        height: "12px", 
+                                                        borderRadius: "50%", 
+                                                        background: req.subjects?.color || "var(--primary)" 
+                                                    }} />
+                                                    <div>
+                                                        <p style={{ fontWeight: 550, color: "var(--fg)", fontSize: "0.95rem" }}>
+                                                            {req.subjects?.name}
+                                                        </p>
+                                                        <span style={{ fontSize: "0.75rem", color: "var(--fg-muted)" }}>
+                                                            Cohort: {req.subjects?.batches?.batch_code || "Unknown Batch"}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <span 
+                                                    className={`badge ${req.status === "pending" ? "badge-warning" : "badge-danger"}`}
+                                                    style={{ fontSize: "0.75rem", textTransform: "capitalize", padding: "0.25rem 0.5rem" }}
+                                                >
+                                                    {req.status}
+                                                </span>
+                                            </div>
+
+                                            {req.status === "rejected" && req.notes && (
+                                                <div style={{ 
+                                                    fontSize: "0.8rem", 
+                                                    color: "var(--danger)", 
+                                                    background: "rgba(239, 68, 68, 0.04)", 
+                                                    padding: "0.6rem", 
+                                                    borderRadius: "0.4rem",
+                                                    borderLeft: "3px solid var(--danger)"
+                                                }}>
+                                                    <strong>CR Comment:</strong> {req.notes}
+                                                </div>
+                                            )}
+
+                                            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                                                <button
+                                                    onClick={() => handleCancelRequest(req.id)}
+                                                    disabled={actionLoading === req.id}
+                                                    className="btn btn-outline"
+                                                    style={{ 
+                                                        padding: "0.3rem 0.6rem", 
+                                                        fontSize: "0.75rem", 
+                                                        color: req.status === "pending" ? "var(--fg-muted)" : "var(--danger)", 
+                                                        borderColor: req.status === "pending" ? "var(--border)" : "var(--danger)",
+                                                        background: "transparent"
+                                                    }}
+                                                >
+                                                    {actionLoading === req.id ? (
+                                                        <span className="spinner" style={{ width: "10px", height: "10px" }} />
+                                                    ) : req.status === "pending" ? (
+                                                        "Cancel Request"
+                                                    ) : (
+                                                        "Dismiss"
+                                                    )}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* ── Right Column: Cross-Enrollment / Repeat Panel ── */}
@@ -384,7 +527,7 @@ export const SettingsView = () => {
                             <h4 style={{ fontSize: "1.15rem", fontWeight: 600, color: "var(--fg)" }}>Link Repeating Subject</h4>
                         </div>
                         <p style={{ color: "var(--fg-muted)", fontSize: "0.85rem", marginBottom: "1.5rem" }}>
-                            Need to catch up on a failed course or proceed with a course from a junior batch? Subscribe to that specific subject to show its events on your calendar.
+                            Need to catch up on a failed course or proceed with a course from a junior batch? Submit a link request to that cohort's CR.
                         </p>
 
                         <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
@@ -416,7 +559,7 @@ export const SettingsView = () => {
                                     
                                     {availableBatchSubjects.length === 0 ? (
                                         <p style={{ fontSize: "0.8rem", color: "var(--fg-muted)", textAlign: "center", padding: "1rem" }}>
-                                            No additional subjects available to subscribe (or you are already subscribed to all of them).
+                                            No additional subjects available to subscribe (or you are already subscribed/requested to all of them).
                                         </p>
                                     ) : (
                                         <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
@@ -438,7 +581,7 @@ export const SettingsView = () => {
                                                         <span style={{ fontSize: "0.85rem", fontWeight: 500, color: "var(--fg)" }}>{sub.name}</span>
                                                     </div>
                                                     <button
-                                                        onClick={() => handleSubscribeToSubject(sub)}
+                                                        onClick={() => handleRequestSubject(sub)}
                                                         disabled={actionLoading === sub.id}
                                                         className="btn btn-primary"
                                                         style={{ padding: "0.3rem 0.6rem", fontSize: "0.75rem", gap: "0.25rem" }}
@@ -447,8 +590,8 @@ export const SettingsView = () => {
                                                             <span className="spinner" style={{ width: "10px", height: "10px" }} />
                                                         ) : (
                                                             <>
-                                                                <span className="material-symbols-outlined" style={{ fontSize: "0.9rem" }}>add</span>
-                                                                <span>Link</span>
+                                                                <span className="material-symbols-outlined" style={{ fontSize: "0.9rem" }}>send</span>
+                                                                <span>Request</span>
                                                             </>
                                                         )}
                                                     </button>
@@ -465,3 +608,4 @@ export const SettingsView = () => {
         </Layout>
     );
 };
+
