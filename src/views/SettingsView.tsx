@@ -61,7 +61,17 @@ export const SettingsView = () => {
         if (error) {
             console.error("Error fetching subscriptions:", error);
         } else {
-            setSubscriptions(data || []);
+            // Safely map subjects array to a single object if inferred as an array by the query
+            const mappedData: Subscription[] = (data || []).map((item: any) => ({
+                id: item.id,
+                subject_id: item.subject_id,
+                is_active: item.is_active,
+                subjects: Array.isArray(item.subjects) 
+                    ? item.subjects[0] 
+                    : item.subjects
+            })).filter(item => item.subjects !== null && item.subjects !== undefined);
+            
+            setSubscriptions(mappedData);
         }
         setLoadingSubs(false);
     };

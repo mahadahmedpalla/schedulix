@@ -58,10 +58,10 @@ export const useEvents = (startDate: string, endDate: string, batchId?: string |
             return;
         }
 
-        // Extract subjects and valid IDs
+        // Extract subjects and valid IDs safely mapping arrays to single objects
         const subscribedSubjects = (subsData || [])
-            .map(sub => sub.subjects)
-            .filter((s): s is any => s !== null);
+            .map((sub: any) => Array.isArray(sub.subjects) ? sub.subjects[0] : sub.subjects)
+            .filter((s): s is any => s !== null && s !== undefined);
 
         const validSubjectIds = subscribedSubjects.map(s => s.id);
 
