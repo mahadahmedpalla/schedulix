@@ -10,6 +10,8 @@ import { EventUploader } from "./admin/EventUploader.tsx";
 import { ProgramManager } from "./admin/ProgramManager.tsx";
 import { BatchManager } from "./admin/BatchManager.tsx";
 import { CrRequestsView } from "./admin/CrRequestsView.tsx";
+import { RoleManager } from "./admin/RoleManager.tsx";
+import { Shield } from "lucide-react";
 
 const tabs = [
     { name: "Subjects", path: "/admin/subjects", icon: BookOpen },
@@ -258,6 +260,25 @@ export const AdminDashboard = () => {
                                     <PlusCircle size={16} />
                                     Batches
                                 </Link>
+                                <Link
+                                    to="/admin/roles"
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "0.5rem",
+                                        padding: "0.5rem 0.75rem",
+                                        borderRadius: "var(--radius-sm)",
+                                        fontSize: "0.875rem",
+                                        fontWeight: location.pathname === '/admin/roles' ? 600 : 500,
+                                        color: location.pathname === '/admin/roles' ? "var(--fg)" : "var(--fg-subtle)",
+                                        background: location.pathname === '/admin/roles' ? "var(--bg-raised)" : "transparent",
+                                        textDecoration: "none",
+                                        transition: "all 0.15s",
+                                    }}
+                                >
+                                    <Shield size={16} />
+                                    User Roles
+                                </Link>
                             </>
                         )}
                     </nav>
@@ -281,6 +302,7 @@ export const AdminDashboard = () => {
                             <>
                                 <Route path="programs" element={<ProgramManager />} />
                                 <Route path="batches" element={<BatchManager />} />
+                                <Route path="roles" element={<RoleManager />} />
                             </>
                         )}
                         <Route path="*" element={<Navigate to="subjects" replace />} />
