@@ -24,7 +24,7 @@ interface RequestItem {
 }
 
 export const CrRequestsView = () => {
-    const { user, role, batch_id, loading: authLoading } = useAuth();
+    const { user, role, loading: authLoading } = useAuth();
     const [requests, setRequests] = useState<RequestItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
