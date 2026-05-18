@@ -18,7 +18,7 @@ const tabs = [
 ];
 
 export const AdminDashboard = () => {
-    const { user, role, batch_id, loading } = useAuth();
+    const { user, role, loading } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const [pendingCount, setPendingCount] = useState(0);
@@ -29,27 +29,17 @@ export const AdminDashboard = () => {
 
         const fetchPendingCount = async () => {
             try {
-                // For batch admins: first get their batch's subject IDs, then count by those
-                let subjectIds: string[] | null = null;
-                if (role === "admin" && batch_id) {
-                    const { data: subjects } = await supabase
-                        .from("subjects")
-                        .select("id")
-                        .eq("batch_id", batch_id);
-                    subjectIds = subjects ? subjects.map((s: any) => s.id) : [];
-                    if (subjectIds.length === 0) {
-                        setPendingCount(0);
-                        return;
-                    }
-                }
-
                 let query = supabase
                     .from("student_subject_requests")
                     .select("id", { count: "exact", head: true })
                     .eq("status", "pending");
 
-                if (subjectIds) {
-                    query = query.in("subject_id", subjectIds);
+                if (role === "admin") {
+                    // Batch CR: count only their directly assigned requests
+                    query = query.eq("assigned_cr_id", user.id);
+                } else {
+                    // super_admin: edge case — only unassigned requests
+                    query = query.is("assigned_cr_id", null);
                 }
 
                 const { count, error } = await query;
@@ -66,7 +56,7 @@ export const AdminDashboard = () => {
         // Refresh count every 15 seconds to keep dashboard live and reactive
         const interval = setInterval(fetchPendingCount, 15000);
         return () => clearInterval(interval);
-    }, [user, role, batch_id, loading]);
+    }, [user, role, loading]);
 
     // REDIRECT LOGIC: Patiently wait for loading to finish.
     useEffect(() => {

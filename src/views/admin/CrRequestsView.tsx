@@ -44,29 +44,10 @@ export const CrRequestsView = () => {
         setLoading(true);
         setError(null);
         try {
-            // ── Step 1: For batch admins, get the subject IDs that belong to their batch ──
-            // This avoids all PostgREST embedded join filtering issues entirely.
-            let subjectIdFilter: string[] | null = null;
-
-            if (role === "admin" && batch_id) {
-                const { data: batchSubjects, error: subjectError } = await supabase
-                    .from("subjects")
-                    .select("id")
-                    .eq("batch_id", batch_id);
-
-                if (subjectError) throw subjectError;
-
-                // If the admin's batch has no subjects, there can't be any requests
-                if (!batchSubjects || batchSubjects.length === 0) {
-                    setRequests([]);
-                    setLoading(false);
-                    return;
-                }
-
-                subjectIdFilter = batchSubjects.map((s: any) => s.id);
-            }
-
-            // ── Step 2: Fetch pending requests, filtered by subject IDs if admin ──
+            // ── Simple direct fetch using assigned_cr_id ──
+            // For batch admins: only their assigned requests (assigned_cr_id = their user ID)
+            // For super_admin: only unassigned requests (NULL assigned_cr_id) as edge case
+            // RLS enforces this at the DB level too — double safety.
             let query = supabase
                 .from("student_subject_requests")
                 .select(`
@@ -76,11 +57,11 @@ export const CrRequestsView = () => {
                     status,
                     notes,
                     created_at,
+                    assigned_cr_id,
                     subjects:subject_id (
                         id,
                         name,
                         color,
-                        batch_id,
                         batches:batch_id (
                             batch_code
                         )
@@ -89,40 +70,38 @@ export const CrRequestsView = () => {
                 .eq("status", "pending")
                 .order("created_at", { ascending: false });
 
-            // Apply the safe .in() filter instead of embedded join filter
-            if (subjectIdFilter) {
-                query = query.in("subject_id", subjectIdFilter);
+            if (role === "admin") {
+                // Batch CR: only their directly assigned requests
+                query = query.eq("assigned_cr_id", user.id);
+            } else {
+                // super_admin: edge case — only requests with no assigned CR
+                query = query.is("assigned_cr_id", null);
             }
 
             const { data, error: fetchError } = await query;
-
             if (fetchError) throw fetchError;
 
             let mappedData: RequestItem[] = [];
 
             if (data && data.length > 0) {
-                // ── Step 3: Fetch student emails separately to avoid view-join schema cache errors ──
+                // Fetch student emails separately (avoids PostgREST view-join schema cache issues)
                 const studentIds = Array.from(new Set(data.map((item: any) => item.student_id)));
 
-                const { data: profileData, error: profileError } = await supabase
+                const { data: profileData } = await supabase
                     .from("student_profiles")
                     .select("id, email")
                     .in("id", studentIds);
 
-                if (profileError) {
-                    console.warn("Could not load student emails:", profileError.message);
-                }
-
                 const profileMap = new Map<string, string>();
                 if (profileData) {
-                    profileData.forEach((p: any) => {
-                        profileMap.set(p.id, p.email);
-                    });
+                    profileData.forEach((p: any) => profileMap.set(p.id, p.email));
                 }
 
                 mappedData = data.map((item: any) => {
                     const subj = Array.isArray(item.subjects) ? item.subjects[0] : item.subjects;
-                    const batch = subj ? (Array.isArray(subj.batches) ? subj.batches[0] : subj.batches) : null;
+                    const batch = subj
+                        ? (Array.isArray(subj.batches) ? subj.batches[0] : subj.batches)
+                        : null;
                     const email = profileMap.get(item.student_id) || `Student (${item.student_id.substring(0, 8)}...)`;
 
                     return {
@@ -132,15 +111,8 @@ export const CrRequestsView = () => {
                         status: item.status,
                         notes: item.notes,
                         created_at: item.created_at,
-                        subjects: subj ? {
-                            id: subj.id,
-                            name: subj.name,
-                            color: subj.color,
-                            batches: batch
-                        } : null,
-                        student_profiles: {
-                            email
-                        }
+                        subjects: subj ? { id: subj.id, name: subj.name, color: subj.color, batches: batch } : null,
+                        student_profiles: { email }
                     };
                 });
             }
@@ -152,7 +124,7 @@ export const CrRequestsView = () => {
         } finally {
             setLoading(false);
         }
-    }, [user, role, batch_id, authLoading]);
+    }, [user, role, authLoading]);
 
     useEffect(() => {
         fetchRequests();
