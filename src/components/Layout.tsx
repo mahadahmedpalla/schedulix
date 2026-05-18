@@ -12,7 +12,7 @@ interface LayoutProps {
 export const Layout: FC<LayoutProps> = ({ children }) => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { user, role, batch_code, loading } = useAuth();
+    const { user, role, batch_id, batch_code, loading } = useAuth();
     const [pendingCount, setPendingCount] = useState(0);
 
     useEffect(() => {
@@ -26,11 +26,8 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
                     .eq("status", "pending");
 
                 if (role === "admin") {
-                    // Batch CR: count only their directly assigned requests
-                    query = query.eq("assigned_cr_id", user.id);
-                } else {
-                    // super_admin: edge case — only unassigned requests
-                    query = query.is("assigned_cr_id", null);
+                    // Batch CR: count only requests matching their assigned batch
+                    query = query.eq("batch_id", batch_id);
                 }
 
                 const { count, error } = await query;
@@ -45,7 +42,7 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
         fetchPendingCount();
         const interval = setInterval(fetchPendingCount, 15000);
         return () => clearInterval(interval);
-    }, [user, role, loading]);
+    }, [user, role, batch_id, loading]);
 
     const handleLogout = async () => {
         await supabase.auth.signOut();

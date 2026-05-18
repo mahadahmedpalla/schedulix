@@ -20,7 +20,7 @@ const tabs = [
 ];
 
 export const AdminDashboard = () => {
-    const { user, role, loading } = useAuth();
+    const { user, role, batch_id, loading } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const [pendingCount, setPendingCount] = useState(0);
@@ -37,11 +37,8 @@ export const AdminDashboard = () => {
                     .eq("status", "pending");
 
                 if (role === "admin") {
-                    // Batch CR: count only their directly assigned requests
-                    query = query.eq("assigned_cr_id", user.id);
-                } else {
-                    // super_admin: edge case — only unassigned requests
-                    query = query.is("assigned_cr_id", null);
+                    // Batch CR: count only requests matching their assigned batch
+                    query = query.eq("batch_id", batch_id);
                 }
 
                 const { count, error } = await query;
@@ -58,7 +55,7 @@ export const AdminDashboard = () => {
         // Refresh count every 15 seconds to keep dashboard live and reactive
         const interval = setInterval(fetchPendingCount, 15000);
         return () => clearInterval(interval);
-    }, [user, role, loading]);
+    }, [user, role, batch_id, loading]);
 
     // REDIRECT LOGIC: Patiently wait for loading to finish.
     useEffect(() => {

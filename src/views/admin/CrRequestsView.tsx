@@ -24,7 +24,7 @@ interface RequestItem {
 }
 
 export const CrRequestsView = () => {
-    const { user, role, loading: authLoading } = useAuth();
+    const { user, role, batch_id, loading: authLoading } = useAuth();
     const [requests, setRequests] = useState<RequestItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -44,10 +44,9 @@ export const CrRequestsView = () => {
         setLoading(true);
         setError(null);
         try {
-            // ── Simple direct fetch using assigned_cr_id ──
-            // For batch admins: only their assigned requests (assigned_cr_id = their user ID)
-            // For super_admin: only unassigned requests (NULL assigned_cr_id) as edge case
-            // RLS enforces this at the DB level too — double safety.
+            // ── Query based on batch_id assignment ──
+            // For batch admins: requests for their assigned batch_id
+            // For super_admin: see all requests
             let query = supabase
                 .from("student_subject_requests")
                 .select(`
@@ -57,7 +56,7 @@ export const CrRequestsView = () => {
                     status,
                     notes,
                     created_at,
-                    assigned_cr_id,
+                    batch_id,
                     subjects:subject_id (
                         id,
                         name,
@@ -71,11 +70,8 @@ export const CrRequestsView = () => {
                 .order("created_at", { ascending: false });
 
             if (role === "admin") {
-                // Batch CR: only their directly assigned requests
-                query = query.eq("assigned_cr_id", user.id);
-            } else {
-                // super_admin: edge case — only requests with no assigned CR
-                query = query.is("assigned_cr_id", null);
+                // Batch CR: only requests matching their assigned batch
+                query = query.eq("batch_id", batch_id);
             }
 
             const { data, error: fetchError } = await query;
@@ -124,7 +120,7 @@ export const CrRequestsView = () => {
         } finally {
             setLoading(false);
         }
-    }, [user, role, authLoading]);
+    }, [user, role, batch_id, authLoading]);
 
     useEffect(() => {
         fetchRequests();
