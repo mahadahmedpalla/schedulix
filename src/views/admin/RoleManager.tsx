@@ -57,17 +57,14 @@ export const RoleManager = () => {
             if (batchErr) throw batchErr;
             setBatches(batchData || []);
 
-            // 2. Fetch all user roles mapped with their emails from auth.users (via student_profiles)
+            // 2. Fetch all user roles
             const { data: roleData, error: roleErr } = await supabase
                 .from('user_roles')
                 .select(`
                     id,
                     role,
                     batch_id,
-                    created_at,
-                    batches:batch_id (
-                        batch_code
-                    )
+                    created_at
                 `);
 
             if (roleErr) throw roleErr;
@@ -85,14 +82,17 @@ export const RoleManager = () => {
                 profileData?.forEach(p => profileMap.set(p.id, p.email));
             }
 
+            // Create a lookup map for batch codes
+            const batchMap = new Map<string, string>();
+            (batchData || []).forEach(b => batchMap.set(b.id, b.batch_code));
+
             const mappedRoles: UserRole[] = (roleData || []).map(r => {
-                const batch = Array.isArray(r.batches) ? r.batches[0] : r.batches;
                 return {
                     id: r.id,
                     email: profileMap.get(r.id) || `User (${r.id.substring(0, 8)})`,
                     role: r.role as any,
                     batch_id: r.batch_id,
-                    batch_code: batch ? batch.batch_code : null,
+                    batch_code: r.batch_id ? (batchMap.get(r.batch_id) || null) : null,
                     created_at: r.created_at
                 };
             });
