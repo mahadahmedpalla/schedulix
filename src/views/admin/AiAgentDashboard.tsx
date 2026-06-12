@@ -223,7 +223,7 @@ export const AiAgentDashboard = () => {
                         }}
                     >
                         <option value="gemini">Google Gemini (3.5 Flash)</option>
-                        <option value="openrouter">OpenRouter (GPT 4o-Mini)</option>
+                        <option value="openrouter">OpenRouter (GPT 5.4 Mini)</option>
                     </select>
                 </div>
                 <textarea 
