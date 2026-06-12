@@ -101,6 +101,7 @@ If a subject or event cannot be found, DO NOT create an action for it. Ensure th
                         { role: "user", content: "CR Request: " + prompt }
                     ],
                     temperature: 0.1,
+                    max_tokens: 1500,
                     response_format: { type: "json_object" }
                 })
             });
