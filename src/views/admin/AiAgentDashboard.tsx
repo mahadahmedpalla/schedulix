@@ -8,6 +8,7 @@ import { Bot, Send, Calendar, AlertTriangle, Trash2, CalendarPlus, Edit2, CheckC
 export const AiAgentDashboard = () => {
     const { user, batch_id, role } = useAuth();
     
+    const [provider, setProvider] = useState<"gemini" | "openrouter">("gemini");
     const [prompt, setPrompt] = useState("");
     const [loading, setLoading] = useState(false);
     const [actions, setActions] = useState<AIAction[]>([]);
@@ -56,7 +57,7 @@ export const AiAgentDashboard = () => {
         setActions([]);
 
         try {
-            const result = await processAiPrompt(prompt, subjects, eventTypes, existingEvents);
+            const result = await processAiPrompt(prompt, subjects, eventTypes, existingEvents, provider);
             setActions(result);
             if (result.length === 0) {
                 setErrorMsg("AI could not extract any valid actions from your prompt.");
@@ -205,6 +206,26 @@ export const AiAgentDashboard = () => {
             </div>
 
             <div className="surface" style={{ padding: "1.5rem", borderRadius: "1rem", border: "1px solid var(--border)", marginBottom: "2rem" }}>
+                <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: "1rem", gap: "1rem" }}>
+                    <label style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--fg-muted)" }}>Select AI Model:</label>
+                    <select 
+                        value={provider}
+                        onChange={(e) => setProvider(e.target.value as "gemini" | "openrouter")}
+                        className="input-select"
+                        style={{
+                            padding: "0.4rem 0.75rem",
+                            borderRadius: "0.5rem",
+                            background: "var(--bg-surface)",
+                            border: "1px solid var(--border)",
+                            color: "var(--fg)",
+                            fontSize: "0.85rem",
+                            cursor: "pointer"
+                        }}
+                    >
+                        <option value="gemini">Google Gemini (3.5 Flash)</option>
+                        <option value="openrouter">OpenRouter (GPT 4o-Mini)</option>
+                    </select>
+                </div>
                 <textarea 
                     value={prompt}
                     onChange={e => setPrompt(e.target.value)}

@@ -36,6 +36,7 @@ export const SettingsView = () => {
     const navigate = useNavigate();
 
     const [geminiKey, setGeminiKey] = useState<string>(localStorage.getItem("gemini_api_key") || "");
+    const [openrouterKey, setOpenrouterKey] = useState<string>(localStorage.getItem("openrouter_api_key") || "");
 
     const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
     const [batches, setBatches] = useState<Batch[]>([]);
@@ -333,16 +334,35 @@ export const SettingsView = () => {
                                     }}
                                 />
                             </div>
+                            <div className="form-group" style={{ marginBottom: "1rem" }}>
+                                <label style={{ fontSize: "0.8rem", fontWeight: 550, color: "var(--fg-muted)" }}>OpenRouter API Key</label>
+                                <input 
+                                    type="password" 
+                                    value={openrouterKey} 
+                                    onChange={e => setOpenrouterKey(e.target.value)}
+                                    placeholder="sk-or-v1-..." 
+                                    className="input-field"
+                                    style={{
+                                        width: "100%",
+                                        padding: "0.75rem",
+                                        borderRadius: "0.5rem",
+                                        background: "var(--surface-overlay)",
+                                        border: "1px solid var(--border)",
+                                        color: "var(--fg)"
+                                    }}
+                                />
+                            </div>
                             <div style={{ display: "flex", justifyContent: "flex-end" }}>
                                 <button 
                                     onClick={() => {
                                         localStorage.setItem("gemini_api_key", geminiKey);
-                                        alert("API Key saved securely to your browser!");
+                                        localStorage.setItem("openrouter_api_key", openrouterKey);
+                                        alert("API Keys saved securely to your browser!");
                                     }}
                                     className="btn btn-primary"
                                     style={{ padding: "0.5rem 1rem", fontSize: "0.85rem" }}
                                 >
-                                    Save Key
+                                    Save Keys
                                 </button>
                             </div>
                         </div>
