@@ -1,0 +1,81 @@
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+export interface AIAction {
+    action: "CREATE" | "UPDATE" | "DELETE";
+    title?: string;
+    description?: string;
+    date?: string; // YYYY-MM-DD
+    subject_id?: string;
+    type_id?: string;
+    event_id?: string; // only for UPDATE/DELETE
+    reasoning: string;
+}
+
+export async function processAiPrompt(
+    prompt: string,
+    subjects: any[],
+    eventTypes: any[],
+    existingEvents: any[]
+): Promise<AIAction[]> {
+    const apiKey = localStorage.getItem("gemini_api_key");
+    if (!apiKey) {
+        throw new Error("No Gemini API Key found. Please save it in Settings first.");
+    }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    // Build the system instructions with full context
+    const systemPrompt = `
+You are an expert AI Event Manager for a university cohort. Your job is to parse the user's natural language request and output a strict JSON array of actions.
+
+IMPORTANT CONTEXT:
+Today's Date: ${new Date().toISOString().split('T')[0]}
+
+AVAILABLE SUBJECTS (You can ONLY use these subject_ids):
+${JSON.stringify(subjects.map(s => ({ id: s.id, name: s.name })), null, 2)}
+
+AVAILABLE EVENT TYPES (You can ONLY use these type_ids):
+${JSON.stringify(eventTypes.map(e => ({ id: e.id, name: e.name })), null, 2)}
+
+EXISTING UPCOMING EVENTS (Use these event_ids if user asks to update or delete an event):
+${JSON.stringify(existingEvents.map(e => ({ id: e.id, title: e.title, date: e.date, subject: e.subjects?.name })), null, 2)}
+
+RULES:
+1. Fuzzy match subject names and acronyms (e.g., "DB" -> "Database Management Systems", "OS" -> "Operating Systems").
+2. Only output a JSON array of objects.
+3. Use this exact schema for each object:
+{
+  "action": "CREATE" | "UPDATE" | "DELETE",
+  "title": string (if CREATE or UPDATE, give it a professional title),
+  "description": string (if CREATE or UPDATE),
+  "date": string "YYYY-MM-DD" (if CREATE or UPDATE),
+  "subject_id": string (if CREATE, use the exact ID from AVAILABLE SUBJECTS),
+  "type_id": string (if CREATE or UPDATE, use the exact ID from AVAILABLE EVENT TYPES),
+  "event_id": string (REQUIRED if UPDATE or DELETE, match using EXISTING UPCOMING EVENTS),
+  "reasoning": string (Brief explanation of why this action was taken and what fuzzy matching was used)
+}
+
+If a subject or event cannot be found, DO NOT create an action for it. Ensure the date is formatted as YYYY-MM-DD. ONLY RETURN VALID JSON ARRAY.
+`;
+
+    try {
+        const result = await model.generateContent({
+            contents: [
+                { role: "user", parts: [{ text: systemPrompt }] },
+                { role: "user", parts: [{ text: "CR Request: " + prompt }] }
+            ],
+            generationConfig: {
+                temperature: 0.1,
+                responseMimeType: "application/json"
+            }
+        });
+
+        const text = result.response.text();
+        const actions: AIAction[] = JSON.parse(text);
+        return actions;
+    } catch (err: any) {
+        console.error("AI Error:", err);
+        throw new Error("Failed to process AI prompt. " + (err.message || "Invalid JSON or API failure."));
+    }
+}

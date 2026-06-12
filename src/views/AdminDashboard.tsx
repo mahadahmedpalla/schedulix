@@ -3,7 +3,7 @@ import { useNavigate, Routes, Route, Link, useLocation, Navigate } from "react-r
 import { supabase } from "../services/supabase.ts";
 import { useAuth } from "../context/AuthContext.tsx";
 import { Layout } from "../components/Layout.tsx";
-import { BookOpen, Settings, PlusCircle, LogOut, ClipboardCheck } from "lucide-react";
+import { BookOpen, Settings, PlusCircle, LogOut, ClipboardCheck, Bot } from "lucide-react";
 import { SubjectManager } from "./admin/SubjectManager.tsx";
 import { EventTypeManager } from "./admin/EventTypeManager.tsx";
 import { EventUploader } from "./admin/EventUploader.tsx";
@@ -11,12 +11,14 @@ import { ProgramManager } from "./admin/ProgramManager.tsx";
 import { BatchManager } from "./admin/BatchManager.tsx";
 import { CrRequestsView } from "./admin/CrRequestsView.tsx";
 import { RoleManager } from "./admin/RoleManager.tsx";
+import { AiAgentDashboard } from "./admin/AiAgentDashboard.tsx";
 import { Shield } from "lucide-react";
 
 const tabs = [
     { name: "Subjects", path: "/admin/subjects", icon: BookOpen },
     { name: "Event Types", path: "/admin/types", icon: Settings },
     { name: "Upload Event", path: "/admin/upload", icon: PlusCircle },
+    { name: "AI Assistant", path: "/admin/ai", icon: Bot },
 ];
 
 export const AdminDashboard = () => {
@@ -294,6 +296,7 @@ export const AdminDashboard = () => {
                         <Route path="subjects" element={<SubjectManager />} />
                         <Route path="types" element={<EventTypeManager />} />
                         <Route path="upload" element={<EventUploader />} />
+                        <Route path="ai" element={<AiAgentDashboard />} />
                         <Route path="requests" element={<CrRequestsView />} />
                         {role === 'super_admin' && (
                             <>

@@ -32,8 +32,10 @@ interface Subject {
 }
 
 export const SettingsView = () => {
-    const { user, batch_id, batch_code, loading: authLoading } = useAuth();
+    const { user, role, batch_id, batch_code, loading: authLoading } = useAuth();
     const navigate = useNavigate();
+
+    const [geminiKey, setGeminiKey] = useState<string>(localStorage.getItem("gemini_api_key") || "");
 
     const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
     const [batches, setBatches] = useState<Batch[]>([]);
@@ -300,8 +302,52 @@ export const SettingsView = () => {
                     </div>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "2rem" }}>
+                <div className="settings-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "2rem" }}>
                     
+                    {/* ── Sub-Admin AI Key Settings ── */}
+                    {(role === "admin" || role === "super_admin") && (
+                        <div className="surface" style={{ padding: "2rem", borderRadius: "1rem", border: "1px solid var(--border)" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.5rem" }}>
+                                <span className="material-symbols-outlined" style={{ color: "var(--accent)", fontSize: "1.75rem" }}>smart_toy</span>
+                                <h4 style={{ fontSize: "1.15rem", fontWeight: 600, color: "var(--fg)" }}>AI Agent Settings</h4>
+                            </div>
+                            <p style={{ color: "var(--fg-muted)", fontSize: "0.85rem", marginBottom: "1.5rem" }}>
+                                Enter your Google Gemini API key to enable the natural-language Event AI Agent. This key is stored securely in your browser's local storage.
+                            </p>
+                            
+                            <div className="form-group" style={{ marginBottom: "1rem" }}>
+                                <label style={{ fontSize: "0.8rem", fontWeight: 550, color: "var(--fg-muted)" }}>Gemini API Key</label>
+                                <input 
+                                    type="password" 
+                                    value={geminiKey} 
+                                    onChange={e => setGeminiKey(e.target.value)}
+                                    placeholder="AIzaSy..." 
+                                    className="input-field"
+                                    style={{
+                                        width: "100%",
+                                        padding: "0.75rem",
+                                        borderRadius: "0.5rem",
+                                        background: "var(--surface-overlay)",
+                                        border: "1px solid var(--border)",
+                                        color: "var(--fg)"
+                                    }}
+                                />
+                            </div>
+                            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                                <button 
+                                    onClick={() => {
+                                        localStorage.setItem("gemini_api_key", geminiKey);
+                                        alert("API Key saved securely to your browser!");
+                                    }}
+                                    className="btn btn-primary"
+                                    style={{ padding: "0.5rem 1rem", fontSize: "0.85rem" }}
+                                >
+                                    Save Key
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
                     {/* ── Left Column: My Core Timetable ── */}
                     <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
                         <div className="surface" style={{ padding: "2rem", borderRadius: "1rem", border: "1px solid var(--border)" }}>
