@@ -3,7 +3,7 @@ import { supabase } from "../../services/supabase.ts";
 import { useAuth } from "../../context/AuthContext.tsx";
 import { processAiPrompt } from "../../services/aiAgent.ts";
 import type { AIAction } from "../../services/aiAgent.ts";
-import { Bot, Send, Calendar, AlertTriangle, Trash2, CalendarPlus, Edit2 } from "lucide-react";
+import { Bot, Send, Calendar, AlertTriangle, Trash2, CalendarPlus, Edit2, CheckCircle } from "lucide-react";
 
 export const AiAgentDashboard = () => {
     const { user, batch_id, role } = useAuth();
@@ -123,6 +123,66 @@ export const AiAgentDashboard = () => {
         }
     };
 
+    const handleApproveSingle = async (index: number) => {
+        const action = actions[index];
+        if (!user) return;
+        setExecuting(true);
+        setErrorMsg(null);
+        
+        try {
+            if (action.subject_id) {
+                const isValidSubject = subjects.find(s => s.id === action.subject_id);
+                if (!isValidSubject) {
+                    throw new Error(`Unauthorized or invalid subject for action: ${action.title}`);
+                }
+            }
+
+            if (action.action === "CREATE") {
+                await supabase.from("events").insert({
+                    title: action.title,
+                    description: action.description,
+                    date: action.date,
+                    subject_id: action.subject_id,
+                    type_id: action.type_id,
+                    is_global: true,
+                    created_by: user.id
+                });
+            } else if (action.action === "UPDATE" && action.event_id) {
+                await supabase.from("events").update({
+                    title: action.title,
+                    description: action.description,
+                    date: action.date,
+                    type_id: action.type_id
+                }).eq("id", action.event_id);
+            } else if (action.action === "DELETE" && action.event_id) {
+                await supabase.from("events").delete().eq("id", action.event_id);
+            }
+            
+            setSuccessMsg(`Successfully executed action: ${action.title || action.action}`);
+            setActions(prev => prev.filter((_, i) => i !== index));
+            
+            const subjectIds = subjects.map(s => s.id);
+            const { data: eventData } = await supabase
+                .from("events")
+                .select("id, title, date, subject_id, type_id, subjects(name)")
+                .in("subject_id", subjectIds)
+                .gte("date", new Date().toISOString().split('T')[0]);
+            if (eventData) setExistingEvents(eventData);
+
+        } catch (err: any) {
+            console.error(err);
+            setErrorMsg("Failed to execute action. " + err.message);
+        } finally {
+            setExecuting(false);
+        }
+    };
+
+    const getEventTypeName = (typeId?: string) => {
+        if (!typeId) return null;
+        const t = eventTypes.find(t => t.id === typeId);
+        return t ? t.name : null;
+    };
+
     if (role !== "admin" && role !== "super_admin") {
         return (
             <div style={{ padding: "2rem", textAlign: "center" }}>
@@ -214,9 +274,21 @@ export const AiAgentDashboard = () => {
                                     {act.action === "CREATE" ? <CalendarPlus size={24} /> : act.action === "DELETE" ? <Trash2 size={24} /> : <Edit2 size={24} />}
                                 </div>
                                 <div style={{ flex: 1 }}>
-                                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem", flexWrap: "wrap" }}>
                                         <h4 style={{ margin: 0, fontWeight: 600, fontSize: "1.1rem" }}>{act.title || "Delete Event"}</h4>
                                         <span className="badge" style={{ fontSize: "0.7rem", padding: "0.1rem 0.4rem" }}>{act.action}</span>
+                                        {getEventTypeName(act.type_id) && (
+                                            <span style={{ 
+                                                fontSize: "0.7rem", 
+                                                padding: "0.1rem 0.4rem", 
+                                                background: "var(--bg-surface)", 
+                                                border: "1px solid var(--border)",
+                                                borderRadius: "1rem",
+                                                color: "var(--fg-muted)"
+                                            }}>
+                                                {getEventTypeName(act.type_id)}
+                                            </span>
+                                        )}
                                     </div>
                                     {act.date && (
                                         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--fg-muted)", fontSize: "0.85rem", marginBottom: "0.5rem" }}>
@@ -229,9 +301,26 @@ export const AiAgentDashboard = () => {
                                             {act.description}
                                         </p>
                                     )}
-                                    <div style={{ background: "var(--surface-overlay)", padding: "0.5rem", borderRadius: "0.25rem", fontSize: "0.8rem", color: "var(--primary)", borderLeft: "2px solid var(--primary)" }}>
+                                    <div style={{ background: "var(--surface-overlay)", padding: "0.5rem", borderRadius: "0.25rem", fontSize: "0.8rem", color: "var(--primary)", borderLeft: "2px solid var(--primary)", marginBottom: "0.75rem" }}>
                                         <strong>AI Reasoning:</strong> {act.reasoning}
                                     </div>
+                                    <button 
+                                        onClick={() => handleApproveSingle(i)}
+                                        disabled={executing}
+                                        className="btn btn-outline"
+                                        style={{ 
+                                            padding: "0.3rem 0.75rem", 
+                                            fontSize: "0.8rem", 
+                                            borderColor: "var(--success)", 
+                                            color: "var(--success)",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: "0.35rem"
+                                        }}
+                                    >
+                                        <CheckCircle size={14} />
+                                        Approve
+                                    </button>
                                 </div>
                             </div>
                         ))}
