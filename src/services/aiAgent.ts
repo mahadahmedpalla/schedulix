@@ -23,7 +23,7 @@ export async function processAiPrompt(
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
 
     // Build the system instructions with full context
     const systemPrompt = `
