@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../services/supabase.ts";
 import { useAuth } from "../../context/AuthContext.tsx";
-import { processAiPrompt, AIAction } from "../../services/aiAgent.ts";
-import { Bot, Send, Calendar, CheckCircle, AlertTriangle, Trash2, CalendarPlus, Edit2 } from "lucide-react";
+import { processAiPrompt } from "../../services/aiAgent.ts";
+import type { AIAction } from "../../services/aiAgent.ts";
+import { Bot, Send, Calendar, AlertTriangle, Trash2, CalendarPlus, Edit2 } from "lucide-react";
 
 export const AiAgentDashboard = () => {
     const { user, batch_id, role } = useAuth();
